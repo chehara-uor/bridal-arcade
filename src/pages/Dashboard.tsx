@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import Navigation from "../components/Navigation";
 import axios from "axios";
-import { get } from "http";
-
+import BrideBackground from "../assets/brides.jpg";
 interface RecentActivity {
   id: number;
   type: string;
@@ -353,8 +352,8 @@ const Dashboard = () => {
               className="group relative overflow-hidden rounded-2xl shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               <img
-                src="https://bridalarcade.lk/wp-content/uploads/2025/09/brides-sri-lanka.jpg"
-                alt=""
+                src={BrideBackground}
+                alt="Bridal Arcade"
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
 
