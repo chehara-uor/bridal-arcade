@@ -3,6 +3,13 @@ import { useNavigate } from "react-router-dom";
 import Logo from "../assets/logo.png";
 import { ToastContainer, toast } from "react-toastify";
 import axios from "axios";
+import { registerUser } from "../api/register";
+interface RegisterData {
+  name: string;
+  username: string;
+  email: string;
+  password: string;
+}
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -13,16 +20,14 @@ const Auth = () => {
     username: "",
     confirmPassword: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
-  const registerCompany = async (data: any) => {
+  const registerOwner = async (data: any) => {
     try {
-      const response = await axios.post("/api/register", JSON.stringify(data), {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (response.status === 200) {
+      const response = await registerUser(data);
+      if (response && response.status === 201) {
         toast.success("Registration successful!");
         setFormData({
           email: "",
@@ -31,15 +36,26 @@ const Auth = () => {
           username: "",
           confirmPassword: "",
         });
+        setIsLogin(true);
       }
     } catch (error) {
       toast.error("Registration failed. Please try again.");
     }
+  }
+
+  const transformRegisterData = (data: RegisterData) => {
+    return {
+      username: data.username.toLocaleLowerCase(),
+      email: data.email,
+      first_name: data.name,
+      password: data.password,
+      role: "bridal_owner"
+    };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simple validation for demo
+    if (isLogin) {
     if (formData.email && formData.password) {
       try {
         const res = await axios.get(
@@ -77,13 +93,39 @@ const Auth = () => {
         }
       }
     }
+  }
+    else {
+      if (formData.password !== formData.confirmPassword) {
+        toast.error("Passwords do not match!");
+        return;
+      }
+      const registerData: RegisterData = {
+        name: formData.name,
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+      };
+      const transformedData = transformRegisterData(registerData);
+      // console.log(transformedData);
+      await registerOwner(transformedData);
+    }
+
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    if (name === "username") {
+      const filtered = value.replace(/[^a-z]/g, "");
+      setFormData({
+        ...formData,
+        [name]: filtered,
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+    }
   };
 
   return (
@@ -167,6 +209,10 @@ const Auth = () => {
                         className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-white/50 focus:ring-2 focus:ring-secondary focus:border-secondary/50 transition-all duration-300 focus:bg-white/15 group-hover:bg-white/15"
                         placeholder="Ex: john"
                         required={!isLogin}
+                        autoComplete="off"
+                        pattern="[a-z]+"
+                        title="Username must contain only lowercase letters, no spaces or special characters."
+                        inputMode="text"
                       />
                       <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-secondary/0 to-primary/0 group-hover:from-secondary/5 group-hover:to-primary/5 transition-all duration-300 pointer-events-none"></div>
                     </div>
@@ -231,15 +277,28 @@ const Auth = () => {
               </label>
               <div className="relative">
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   id="password"
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-white/50 focus:ring-2 focus:ring-secondary focus:border-secondary/50 transition-all duration-300 focus:bg-white/15 group-hover:bg-white/15"
+                  className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-white/50 focus:ring-2 focus:ring-secondary focus:border-secondary/50 transition-all duration-300 focus:bg-white/15 group-hover:bg-white/15 pr-12"
                   placeholder="Enter password"
                   required
                 />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white focus:outline-none"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="20" height="20" x="0" y="0" viewBox="0 0 24 24"><g><path d="M23.271 9.419C21.72 6.893 18.192 2.655 12 2.655S2.28 6.893.729 9.419a4.908 4.908 0 0 0 0 5.162C2.28 17.107 5.808 21.345 12 21.345s9.72-4.238 11.271-6.764a4.908 4.908 0 0 0 0-5.162Zm-1.705 4.115C20.234 15.7 17.219 19.345 12 19.345S3.766 15.7 2.434 13.534a2.918 2.918 0 0 1 0-3.068C3.766 8.3 6.781 4.655 12 4.655s8.234 3.641 9.566 5.811a2.918 2.918 0 0 1 0 3.068Z" fill="#ffffff" opacity="1" data-original="#000000"></path><path d="M12 7a5 5 0 1 0 5 5 5.006 5.006 0 0 0-5-5Zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3Z" fill="#ffffff" opacity="1" data-original="#000000" ></path></g></svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="20" height="20" x="0" y="0" viewBox="0 0 24 24" ><g><path d="M23.271 9.419A15.866 15.866 0 0 0 19.9 5.51l2.8-2.8a1 1 0 0 0-1.414-1.414l-3.045 3.049A12.054 12.054 0 0 0 12 2.655c-6.191 0-9.719 4.238-11.271 6.764a4.908 4.908 0 0 0 0 5.162A15.866 15.866 0 0 0 4.1 18.49l-2.8 2.8a1 1 0 1 0 1.414 1.414l3.052-3.052A12.054 12.054 0 0 0 12 21.345c6.191 0 9.719-4.238 11.271-6.764a4.908 4.908 0 0 0 0-5.162ZM2.433 13.534a2.918 2.918 0 0 1 0-3.068C3.767 8.3 6.782 4.655 12 4.655a10.1 10.1 0 0 1 4.766 1.165l-2.013 2.013a4.992 4.992 0 0 0-6.92 6.92l-2.31 2.31a13.723 13.723 0 0 1-3.09-3.529ZM15 12a3 3 0 0 1-3 3 2.951 2.951 0 0 1-1.285-.3l3.985-3.985A2.951 2.951 0 0 1 15 12Zm-6 0a3 3 0 0 1 3-3 2.951 2.951 0 0 1 1.285.3L9.3 13.285A2.951 2.951 0 0 1 9 12Zm12.567 1.534C20.233 15.7 17.218 19.345 12 19.345a10.1 10.1 0 0 1-4.766-1.165l2.013-2.013a4.992 4.992 0 0 0 6.92-6.92l2.31-2.31a13.723 13.723 0 0 1 3.09 3.529 2.918 2.918 0 0 1 0 3.068Z" fill="#ffffff" opacity="1" data-original="#000000"></path></g></svg>
+                  )}
+                </button>
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-secondary/0 to-primary/0 group-hover:from-secondary/5 group-hover:to-primary/5 transition-all duration-300 pointer-events-none"></div>
               </div>
             </div>
@@ -254,15 +313,28 @@ const Auth = () => {
                 </label>
                 <div className="relative">
                   <input
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     id="confirmPassword"
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-white/50 focus:ring-2 focus:ring-secondary focus:border-secondary/50 transition-all duration-300 focus:bg-white/15 group-hover:bg-white/15"
+                    className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-white/50 focus:ring-2 focus:ring-secondary focus:border-secondary/50 transition-all duration-300 focus:bg-white/15 group-hover:bg-white/15 pr-12"
                     placeholder="Confirm password"
                     required={!isLogin}
                   />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={() => setShowConfirmPassword((v) => !v)}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white focus:outline-none"
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? (
+                       <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="20" height="20" x="0" y="0" viewBox="0 0 24 24"><g><path d="M23.271 9.419C21.72 6.893 18.192 2.655 12 2.655S2.28 6.893.729 9.419a4.908 4.908 0 0 0 0 5.162C2.28 17.107 5.808 21.345 12 21.345s9.72-4.238 11.271-6.764a4.908 4.908 0 0 0 0-5.162Zm-1.705 4.115C20.234 15.7 17.219 19.345 12 19.345S3.766 15.7 2.434 13.534a2.918 2.918 0 0 1 0-3.068C3.766 8.3 6.781 4.655 12 4.655s8.234 3.641 9.566 5.811a2.918 2.918 0 0 1 0 3.068Z" fill="#ffffff" opacity="1" data-original="#000000"></path><path d="M12 7a5 5 0 1 0 5 5 5.006 5.006 0 0 0-5-5Zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3Z" fill="#ffffff" opacity="1" data-original="#000000" ></path></g></svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="20" height="20" x="0" y="0" viewBox="0 0 24 24" ><g><path d="M23.271 9.419A15.866 15.866 0 0 0 19.9 5.51l2.8-2.8a1 1 0 0 0-1.414-1.414l-3.045 3.049A12.054 12.054 0 0 0 12 2.655c-6.191 0-9.719 4.238-11.271 6.764a4.908 4.908 0 0 0 0 5.162A15.866 15.866 0 0 0 4.1 18.49l-2.8 2.8a1 1 0 1 0 1.414 1.414l3.052-3.052A12.054 12.054 0 0 0 12 21.345c6.191 0 9.719-4.238 11.271-6.764a4.908 4.908 0 0 0 0-5.162ZM2.433 13.534a2.918 2.918 0 0 1 0-3.068C3.767 8.3 6.782 4.655 12 4.655a10.1 10.1 0 0 1 4.766 1.165l-2.013 2.013a4.992 4.992 0 0 0-6.92 6.92l-2.31 2.31a13.723 13.723 0 0 1-3.09-3.529ZM15 12a3 3 0 0 1-3 3 2.951 2.951 0 0 1-1.285-.3l3.985-3.985A2.951 2.951 0 0 1 15 12Zm-6 0a3 3 0 0 1 3-3 2.951 2.951 0 0 1 1.285.3L9.3 13.285A2.951 2.951 0 0 1 9 12Zm12.567 1.534C20.233 15.7 17.218 19.345 12 19.345a10.1 10.1 0 0 1-4.766-1.165l2.013-2.013a4.992 4.992 0 0 0 6.92-6.92l2.31-2.31a13.723 13.723 0 0 1 3.09 3.529 2.918 2.918 0 0 1 0 3.068Z" fill="#ffffff" opacity="1" data-original="#000000"></path></g></svg>
+                  )}
+                  </button>
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-secondary/0 to-primary/0 group-hover:from-secondary/5 group-hover:to-primary/5 transition-all duration-300 pointer-events-none"></div>
                 </div>
               </div>
@@ -282,10 +354,10 @@ const Auth = () => {
           {isLogin && (
             <div className="mt-6 text-center">
               <a
-                href="#"
+                href="mailto:hello@bridalarcade.lk?subject=Password%20Reset%20Request"
                 className="text-white hover:text-white/80 text-sm font-semibold transition-colors duration-200 hover:underline"
               >
-                Forgot your password?
+                Forgot your password? Send ✉️ to us
               </a>
             </div>
           )}

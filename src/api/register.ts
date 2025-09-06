@@ -2,8 +2,8 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  (import.meta as any)?.env?.VITE_API_BASE_URL ||
-  "https://bridalarcade.lk/";
+  (import.meta as any)?.env?.VITE_API_BASE_URL || "https://bridalarcade.lk";
+
 
 export async function registerUser(userData: Record<string, any>) {
   const username = import.meta.env.VITE_WP_USERNAME;
