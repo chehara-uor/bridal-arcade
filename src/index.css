@@ -140,4 +140,7 @@ All colors MUST be HSL for proper theme support.
   body {
     @apply bg-background text-foreground;
   }
+  .auth-background{
+    background: linear-gradient(135deg, #FFD700, #4B0082);
+  }
 }
