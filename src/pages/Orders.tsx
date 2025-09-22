@@ -94,12 +94,12 @@ const Orders = () => {
 
         {/* Mobile Card View */}
         <div className="block lg:hidden space-y-4">
-          {filteredOrders.map((order) => (
+          {filteredOrders.map((order, index) => (
             <div key={order.id} className="bg-card rounded-xl p-4 shadow-card border border-border-light">
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <p className="font-semibold text-foreground text-lg">#{order.id}</p>
-                  <p className="text-sm text-muted-foreground">{order.customer}</p>
+                  <p className="text-sm text-muted-foreground">Customer {`#${index + 1}`}</p>
                 </div>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                   {order.status}
@@ -155,7 +155,7 @@ const Orders = () => {
                     </td>
                     <td className="py-4 px-6">
                       <div>
-                        <p className="font-medium text-foreground">{order.customer}</p>
+                        <p className="font-medium text-foreground">Customer {`#${index + 1}`}</p>
                         <p className="text-xs text-muted-foreground">LKR &nbsp;{order.totalAmount}</p>
                       </div>
                     </td>
