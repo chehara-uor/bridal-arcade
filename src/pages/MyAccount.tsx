@@ -52,7 +52,7 @@ export default function MyAccount() {
         };
         setBank(fetchedBank);
         setInitialBank(fetchedBank);
-        console.log("Bank details fetched successfully");
+        //console.log("Bank details fetched successfully");
       }
     } catch (error) {
       console.error("Error fetching bank details:", error);
