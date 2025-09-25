@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Navigation from "../components/Navigation";
 import axios from "axios";
 import BrideBackground from "../assets/brides.jpg";
+import Acc from "../assets/account.jpg"
 interface RecentActivity {
   id: number;
   type: string;
@@ -123,14 +124,22 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mt-[14px] lg:mt-0">
         {/* Welcome Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="details">
+            <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
             Welcome back, {name}!
           </h1>
           <p className="text-muted-foreground mt-1">
             Here's what's happening with your rental item today.
           </p>
-        </div>
+          </div>
+          <a href="/my-account" className="account flex items-center gap-3 bg-gradient-to-br from-accent-foreground/10 to-accent-foreground/5 px-4 py-2 rounded-lg transition">
+            <img src={Acc} alt="Account" className="w-8 h-8" />
+            <span className="text-sm font-semibold text-primary">
+              My account
+            </span>
+            </a>
+          </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
@@ -392,7 +401,7 @@ const Dashboard = () => {
             </a>
 
             <a
-              href="https://wa.me/756204045"
+              href="https://wa.me/94707997883?text=Hi!"
               target="_blank"
               rel="noopener"
               className="group relative overflow-hidden rounded-2xl shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
@@ -408,7 +417,7 @@ const Dashboard = () => {
               <div className="relative z-10 p-6 sm:p-8 min-h-[220px] flex items-end">
                 <div>
                   <h3 className="text-white text-2xl font-semibold">
-                    Join Our WhatsApp Community
+                    Chat Our WhatsApp Community
                   </h3>
                   <p className="mt-1 text-white/80">
                     Get tips, drops, and support.
@@ -417,7 +426,7 @@ const Dashboard = () => {
                     className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-500/95 px-5 py-2.5 text-sm font-medium text-white
                    shadow-md transition-all duration-300 group-hover:translate-y-[-2px] group-hover:shadow-lg"
                   >
-                    Join Now
+                    Chat Now
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-4 w-4"

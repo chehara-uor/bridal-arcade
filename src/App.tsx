@@ -7,6 +7,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Orders from "./pages/Orders";
+import MyAccount from "./pages/MyAccount";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +34,11 @@ const App = () => (
           <Route path="/orders" element={
             <ProtectedRoute>
               <Orders />
+            </ProtectedRoute>
+          } />
+          <Route path="/my-account" element={
+            <ProtectedRoute>
+              <MyAccount />
             </ProtectedRoute>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
