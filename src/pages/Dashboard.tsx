@@ -401,7 +401,7 @@ const Dashboard = () => {
             </a>
 
             <a
-              href="https://wa.me/94707997883?text=Hi!"
+              href="https://chat.whatsapp.com/G45BmT2VSKy5fQWIlxsj0I"
               target="_blank"
               rel="noopener"
               className="group relative overflow-hidden rounded-2xl shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
@@ -417,7 +417,7 @@ const Dashboard = () => {
               <div className="relative z-10 p-6 sm:p-8 min-h-[220px] flex items-end">
                 <div>
                   <h3 className="text-white text-2xl font-semibold">
-                    Chat Our WhatsApp Community
+                    Join Our WhatsApp Group
                   </h3>
                   <p className="mt-1 text-white/80">
                     Get tips, drops, and support.
