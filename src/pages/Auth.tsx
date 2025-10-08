@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Logo from "../assets/logo.png";
 import { ToastContainer, toast } from "react-toastify";
 import axios from "axios";
+import PreLoader from "../components/Preloader";
 import { registerUser } from "../api/register";
 interface RegisterData {
   name: string;
@@ -13,6 +14,7 @@ interface RegisterData {
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -26,6 +28,7 @@ const Auth = () => {
 
   const registerOwner = async (data: any) => {
     try {
+      setLoading(true);
       const response = await registerUser(data);
       if (response && response.status === 201) {
         toast.success("Registration successful!");
@@ -36,10 +39,12 @@ const Auth = () => {
           username: "",
           confirmPassword: "",
         });
+        setLoading(false);
         setIsLogin(true);
       }
     } catch (error) {
       toast.error("Registration failed. Please try again.");
+      setLoading(false);
     }
   }
 
@@ -58,6 +63,7 @@ const Auth = () => {
     if (isLogin) {
     if (formData.email && formData.password) {
       try {
+        setLoading(true);
         const res = await axios.get(
           "https://bridalarcade.lk/wp-json/bridal/v2/login",
           {
@@ -73,12 +79,13 @@ const Auth = () => {
           sessionStorage.setItem("userID", res.data.user_id);
           sessionStorage.setItem("userName", res.data.firstname);
           sessionStorage.setItem("userEmail", formData.email);
-          //setLoading(false);
+          setLoading(false);
           localStorage.setItem("isAuthenticated", "true");
           navigate("/dashboard");
         }
       } catch (err) {
         if (axios.isAxiosError(err)) {
+          setLoading(false);
           if (err.response) {
             if (err.response.status == 401) {
               toast.error("Invalid credentials. Please try again.");
@@ -129,6 +136,10 @@ const Auth = () => {
   };
 
   return (
+    <>
+    {loading ? (
+      <PreLoader />
+    ) : (
     <div className="min-h-screen relative overflow-hidden auth-background flex items-center justify-center p-4">
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -376,6 +387,8 @@ const Auth = () => {
         theme="colored"
       />
     </div>
+    )}
+    </>
   );
 };
 
