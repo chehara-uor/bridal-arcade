@@ -198,17 +198,17 @@ const Auth = () => {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {!isLogin && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-3">
                   <div className="col-span-1">
                     <div className="group">
                     <label
                       htmlFor="username"
                       className="block text-sm font-semibold text-white/90 mb-3"
                     >
-                      User Name
+                      User Name (lowercase letters only)
                     </label>
                     <div className="relative">
                       <input
