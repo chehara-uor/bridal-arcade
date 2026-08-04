@@ -2,10 +2,10 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  (import.meta as any)?.env?.VITE_API_BASE_URL || "https://bridalarcade.lk";
+  (import.meta.env.VITE_API_BASE_URL || "https://bridalarcade.lk").replace(/\/$/, "");
 
 
-export async function registerUser(userData: Record<string, any>) {
+export async function registerUser(userData: Record<string, unknown>) {
   const username = import.meta.env.VITE_WP_USERNAME;
   const appPassword = import.meta.env.VITE_WP_PASSWORD;
 
@@ -15,16 +15,11 @@ export async function registerUser(userData: Record<string, any>) {
 
   const token = btoa(`${username}:${appPassword}`);
 
-  try {
-    const response = await axios.post(`${API_BASE_URL}/wp-json/wp/v2/users`, userData, {
-      headers: {
-        Authorization: `Basic ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-    return response.data;
-  } catch (error: any) {
-    console.error("Error registering user:", error.response || error.message);
-    throw error;
-  }
+  const response = await axios.post(`${API_BASE_URL}/wp-json/wp/v2/users`, userData, {
+    headers: {
+      Authorization: `Basic ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
 }

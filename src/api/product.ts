@@ -1,15 +1,11 @@
 import axios from "axios";
-import { env } from "process";
-
 const username = import.meta.env.VITE_WP_USERNAME;
 const appPassword = import.meta.env.VITE_WP_PASSWORD;
-const token = btoa(`${username}:${appPassword}`);
 
 // Vite: import.meta.env.VITE_API_BASE_URL
 // CRA: process.env.REACT_APP_API_BASE_URL
 const API_BASE_URL =
-  (import.meta as any)?.env?.VITE_API_BASE_URL ||
-  "https://bridalarcade.lk/";
+  (import.meta.env.VITE_API_BASE_URL || "https://bridalarcade.lk").replace(/\/$/, "");
 
 export interface SendProductStatusPayload {
   product_id: number;
@@ -17,6 +13,16 @@ export interface SendProductStatusPayload {
 }
 
 export const sendProductStatus = async (payload: SendProductStatusPayload) => {
+  if (!username || !appPassword) {
+    throw new Error("Product updates are not configured. Please contact Bridal Arcade support.");
+  }
+  if (!Number.isInteger(payload.product_id) || payload.product_id <= 0) {
+    throw new Error("This product has an invalid ID and cannot be updated.");
+  }
+  if (!['publish', 'draft'].includes(payload.status)) {
+    throw new Error("This product status is invalid.");
+  }
+  const token = btoa(`${username}:${appPassword}`);
   const url = `${API_BASE_URL}/wp-json/bridal/v1/update-product-status/`;
   const res = await axios.post(url, payload, {
 

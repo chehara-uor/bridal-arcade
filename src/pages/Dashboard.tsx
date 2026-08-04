@@ -1,457 +1,117 @@
-import { useState, useEffect } from "react";
-import Navigation from "../components/Navigation";
-import axios from "axios";
-import BrideBackground from "../assets/brides.jpg";
-import Acc from "../assets/account.jpg"
-interface RecentActivity {
-  id: number;
-  type: string;
-  time_ago: string;
-}
+import { useEffect, useState } from "react";
+import { ArrowRight, CalendarCheck2, CircleDollarSign, Clock3, Package, ReceiptText, Sparkles, TrendingUp } from "lucide-react";
+import { Link } from "react-router-dom";
+import AppShell from "../components/AppShell";
+import { fetchDashboard, fetchOrders, fetchProducts, getRequestErrorMessage, readSessionCache } from "../api/portal";
 
-interface Stats {
-  totalSales: number;
-  totalOrders: number;
-  categories: string[];
-  monthlyGrowth: number;
-}
+interface RecentActivity { id: number; type: string; time_ago: string; }
+interface Stats { totalSales: number; totalOrders: number; categories: string[]; }
 
+export default function Dashboard() {
+  const [activities, setActivities] = useState<RecentActivity[]>([]);
+  const [stats, setStats] = useState<Stats>({ totalSales: 0, totalOrders: 0, categories: [] });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const name = sessionStorage.getItem("userName") || "Partner";
 
-const Dashboard = () => {
-  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
-  const [name, setName] = useState<string>("");
-  const [stats, setStats] = useState<Stats>({
-    totalSales: 0,
-    totalOrders: 0,
-    categories: [],
-    monthlyGrowth: 0,
-  });
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const loadDashboard = async () => {
+    setLoading(true); setError("");
+    const cached = readSessionCache<Record<string, unknown>>("dashboardData");
+    const validCache = cached && typeof cached === "object" && !Array.isArray(cached) ? cached : null;
+    if (validCache) {
+      const cachedView = normalizeDashboard(validCache);
+      setStats(cachedView.stats);
+      setActivities(cachedView.activities);
+      setLoading(false);
+    }
+    try {
+      const data = await fetchDashboard(sessionStorage.getItem("userEmail") || "");
+      sessionStorage.setItem("dashboardData", JSON.stringify(data));
+      const view = normalizeDashboard(data);
+      setStats(view.stats);
+      setActivities(view.activities);
+    } catch (requestError) {
+      const message = getRequestErrorMessage(requestError, "We couldn't load your overview. Please try again.");
+      setError(validCache ? `${message} Showing your last saved overview.` : message);
+    }
+    finally { setLoading(false); }
+  };
+
+  const prefetch = async (key: string, request: (email: string) => Promise<unknown>) => {
+    if (sessionStorage.getItem(key)) return;
+    try {
+      const data = await request(sessionStorage.getItem("userEmail") || "");
+      sessionStorage.setItem(key, JSON.stringify(data));
+    } catch { /* The destination page will display its empty state. */ }
+  };
 
   useEffect(() => {
-    const userName = sessionStorage.getItem("userName");
-    if (userName) {
-      setName(userName);
-    }
+    loadDashboard();
+    prefetch("productData", fetchProducts);
+    prefetch("orderData", fetchOrders);
   }, []);
 
-  const getData = async () => {
-    setIsLoading(true);
-    if (sessionStorage.getItem("dashboardData")) {
-      const cachedData = JSON.parse(
-        sessionStorage.getItem("dashboardData") || "{}"
-      );
-      setRecentActivities(cachedData.activity);
-      setStats((prev) => ({
-        ...prev,
-        totalSales: cachedData.total_sales,
-        totalOrders: cachedData.orders,
-        categories: cachedData.categories,
-        monthlyGrowth: 12.7,
-      }));
-      setIsLoading(false);
-    } else {
-      try {
-        const res = await axios.get(
-          `https://bridalarcade.lk/wp-json/bridal/v2/dashboard?email=${sessionStorage.getItem(
-            "userEmail"
-          )}`
-        );
-        if (res.status === 200) {
-          sessionStorage.setItem("dashboardData", JSON.stringify(res.data));
-          setStats((prev) => ({
-            ...prev,
-            totalSales: res.data.total_sales,
-            totalOrders: res.data.orders,
-            categories: res.data.categories,
-            monthlyGrowth: 12.7,
-          }));
-          setRecentActivities(res.data.activity);
-        }
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  const getProductData = async () => {
-    if (sessionStorage.getItem("productData")) {
-      return;
-    } else {
-      try {
-        const res = await axios.get(
-          `https://bridalarcade.lk/wp-json/bridal/v1/productlist?email=${sessionStorage.getItem(
-            "userEmail"
-          )}`
-        );
-        if (res.status === 200) {
-          sessionStorage.setItem("productData", JSON.stringify(res.data));
-        }
-      } catch (error) {
-        console.error("Error fetching product data:", error);
-      }
-    }
-  };
-
-  const getOrderData = async () => {
-    if (sessionStorage.getItem("orderData")) {
-      return;
-    } else {
-      try {
-        const res = await axios.get(
-          `https://bridalarcade.lk/wp-json/bridal/v1/orderlist?email=${sessionStorage.getItem(
-            "userEmail"
-          )}`
-        );
-        if (res.status === 200) {
-          sessionStorage.setItem("orderData", JSON.stringify(res.data));
-        }
-      } catch (error) {
-        console.error("Error fetching product data:", error);
-      }
-    }
-  };
-
-  useEffect(() => {
-    getData();
-    getProductData();
-    getOrderData();
-  }, [name]);
-
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mt-[14px] lg:mt-0">
-        {/* Welcome Header */}
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="details">
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-            Welcome back, {name}!
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Here's what's happening with your rental item today.
-          </p>
-          </div>
-          <a href="/my-account" className="account flex items-center gap-3 bg-gradient-to-br from-accent-foreground/10 to-accent-foreground/5 px-4 py-2 rounded-lg transition">
-            <img src={Acc} alt="Account" className="w-8 h-8" />
-            <span className="text-sm font-semibold text-primary">
-              My account
-            </span>
-            </a>
-          </div>
+    <AppShell>
+      <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-7 sm:py-8 xl:px-10">
+        <header className="mb-7 flex items-start justify-between gap-4 sm:mb-9">
+          <div><p className="eyebrow">Today at a glance</p><h1 className="page-title mt-1.5">Hello, {name}</h1><p className="mt-2 text-sm text-muted-foreground sm:text-base">Here’s how your rental collection is performing.</p></div>
+          <Link to="/my-account" className="hidden h-12 items-center gap-3 rounded-full border border-border bg-white pl-2 pr-4 shadow-sm transition hover:border-primary/25 sm:flex">
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-sm font-bold text-white">{name.charAt(0).toUpperCase()}</span><span className="text-sm font-semibold">My account</span>
+          </Link>
+        </header>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-          {/* Total Sales */}
-          <div className="group relative bg-gradient-to-br from-card via-card to-surface-elevated rounded-3xl p-6 sm:p-8 shadow-lg border border-border-light/50 backdrop-blur-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-500">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex-1">
-                <div className="w-fit mb-4 bg-gradient-to-br from-primary to-primary-light p-4 rounded-2xl shadow-lg group-hover:shadow-primary/25 transition-shadow duration-500">
-                  <svg
-                    className="w-8 h-8 text-primary-foreground"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                    />
-                  </svg>
+        {error && <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-destructive/15 bg-destructive/5 p-4 text-sm"><span>{error}</span><button onClick={loadDashboard} className="font-bold text-destructive">Retry</button></div>}
+
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard icon={<CircleDollarSign />} label="Total earnings" value={`LKR ${stats.totalSales.toLocaleString()}`} note="Your rental profit" loading={loading} feature />
+          <MetricCard icon={<ReceiptText />} label="Total orders" value={String(stats.totalOrders)} note="Across all statuses" loading={loading} />
+          <MetricCard icon={<Package />} label="Categories" value={String(stats.categories.length)} note="In your collection" loading={loading} />
+          <MetricCard icon={<TrendingUp />} label="Portal status" value="Active" note="Your store is connected" loading={loading} />
+        </section>
+
+        <section className="mt-6 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+          <div className="surface-card overflow-hidden">
+            <div className="flex items-center justify-between border-b border-border-light px-5 py-5 sm:px-6">
+              <div><h2 className="display-font text-xl font-bold">Recent activity</h2><p className="mt-1 text-sm text-muted-foreground">Latest movement across your account</p></div><Clock3 size={20} className="text-primary/60" />
+            </div>
+            <div className="p-3 sm:p-4">
+              {loading ? <ActivitySkeleton /> : activities.length ? activities.slice(0, 6).map((activity) => (
+                <div key={activity.id} className="flex gap-3 rounded-xl px-2 py-3.5 transition hover:bg-muted/60 sm:px-3">
+                  <span className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-primary"><CalendarCheck2 size={17} /></span>
+                  <div className="min-w-0"><p className="text-sm font-semibold leading-5">{activity.type}</p><p className="mt-1 text-xs text-muted-foreground">{activity.time_ago}</p></div>
                 </div>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <p className="text-muted-foreground text-sm font-semibold uppercase tracking-wider">
-                    Total Profit
-                  </p>
-                </div>
-                {isLoading ? (
-                  <div className="h-10 w-32 bg-muted-foreground/20 animate-pulse rounded mb-3"></div>
-                ) : (
-                  <p className="text-3xl sm:text-4xl font-bold text-foreground mb-3">
-                    LKR {stats.totalSales.toLocaleString()}
-                  </p>
-                )}
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 bg-success/10 px-3 py-1 rounded-full">
-                    <svg
-                      className="w-4 h-4 text-success"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                      ></path>
-                    </svg>
-                    <span className="text-success text-sm font-bold">
-                      +{stats.monthlyGrowth}%
-                    </span>
-                  </div>
-                  <span className="text-muted-foreground text-sm">
-                    vs last month
-                  </span>
-                </div>
-              </div>
+              )) : <EmptyActivity />}
             </div>
           </div>
 
-          {/* Total Orders */}
-          <div className="group relative bg-gradient-to-br from-card via-card to-surface-elevated rounded-3xl p-6 sm:p-8 shadow-lg border border-border-light/50 backdrop-blur-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-500">
-            <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex-1">
-                <div className="w-fit mb-4 bg-gradient-to-br from-secondary to-secondary-light p-4 rounded-2xl shadow-lg group-hover:shadow-secondary/25 transition-shadow duration-500">
-                  <svg
-                    className="w-8 h-8 text-secondary-foreground"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                    />
-                  </svg>
-                </div>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-2 h-2 bg-secondary rounded-full"></div>
-                  <p className="text-muted-foreground text-sm font-semibold uppercase tracking-wider">
-                    Orders
-                  </p>
-                </div>
-                {isLoading ? (
-                  <div className="h-10 w-24 bg-muted-foreground/20 animate-pulse rounded mb-3"></div>
-                ) : (
-                  <p className="text-3xl sm:text-4xl font-bold text-foreground mb-3">
-                    {stats.totalOrders}
-                  </p>
-                )}
-                <p className="text-muted-foreground text-sm font-medium">
-                  Active rentals
-                </p>
-              </div>
+          <div className="space-y-6">
+            <div className="relative overflow-hidden rounded-2xl bg-[#321a27] p-6 text-white shadow-[0_15px_40px_rgba(50,26,39,.18)]">
+              <Sparkles className="absolute -right-3 -top-3 h-28 w-28 text-white/[0.04]" />
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#d5b466]">Quick action</p><h2 className="display-font mt-3 text-2xl font-bold">Keep your collection ready</h2><p className="mt-3 text-sm leading-6 text-white/60">Update availability whenever an item becomes ready to rent again.</p>
+              <Link to="/products" className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-[#321a27] transition hover:bg-[#f7edda]">Manage items <ArrowRight size={17} /></Link>
             </div>
-          </div>
-
-          {/* Categories */}
-          <div className="group relative bg-gradient-to-br from-card via-card to-surface-elevated rounded-3xl p-6 sm:p-8 shadow-lg border border-border-light/50 backdrop-blur-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-500">
-            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-              <div className="flex-1">
-                <div className="w-fit mb-4 bg-gradient-to-br from-accent-foreground/10 to-accent-foreground/5 p-4 rounded-2xl shadow-lg border border-accent-foreground/20 group-hover:shadow-accent-foreground/25 transition-shadow duration-500">
-                  <svg
-                    className="w-8 h-8 text-accent-foreground"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                    />
-                  </svg>
-                </div>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-2 h-2 bg-accent-foreground rounded-full"></div>
-                  <p className="text-muted-foreground text-sm font-semibold uppercase tracking-wider">
-                    My Items
-                  </p>
-                </div>
-                {isLoading ? (
-                  <div className="h-10 w-16 bg-muted-foreground/20 animate-pulse rounded mb-4"></div>
-                ) : (
-                  <p className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-                    {stats.categories.length}
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-2">
-                  {stats.categories.map((category, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center bg-gradient-to-r from-accent-foreground/10 to-accent-foreground/5 text-accent-foreground px-3 py-1.5 rounded-full text-sm font-semibold border border-accent-foreground/20"
-                    >
-                      {category}
-                    </span>
-                  ))}
-                </div>
-              </div>
+            <div className="surface-card p-5 sm:p-6">
+              <p className="eyebrow">Your categories</p>
+              <div className="mt-4 flex flex-wrap gap-2">{loading ? <span className="h-8 w-28 animate-pulse rounded-full bg-muted" /> : stats.categories.length ? stats.categories.map((category) => <span key={category} className="rounded-full border border-primary/10 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary">{category}</span>) : <p className="text-sm text-muted-foreground">No categories to show yet.</p>}</div>
             </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="group relative bg-gradient-to-br from-card via-card to-surface-elevated rounded-3xl p-6 sm:p-8 shadow-lg border border-border-light/50 backdrop-blur-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-500">
-            <div className="absolute inset-0 bg-gradient-to-br from-warning/5 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-2 h-2 bg-warning rounded-full animate-pulse"></div>
-                  <p className="text-muted-foreground text-sm font-semibold uppercase tracking-wider">
-                    Recent Activity
-                  </p>
-                </div>
-                <div className="space-y-4">
-                  {isLoading ? (
-                    <>
-                      <div className="relative pl-4 border-l-2 border-primary/20 transition-colors duration-300">
-                        <div className="absolute -left-1.5 top-1 w-3 h-3 bg-primary/30 rounded-full border-2 border-card animate-pulse"></div>
-                        <div className="h-4 w-32 bg-muted-foreground/20 animate-pulse rounded mb-1 mt-1"></div>
-                        <div className="h-3 w-20 bg-primary/10 animate-pulse rounded-full"></div>
-                      </div>
-                      <div className="relative pl-4 border-l-2 border-primary/20 transition-colors duration-300">
-                        <div className="absolute -left-1.5 top-1 w-3 h-3 bg-primary/30 rounded-full border-2 border-card animate-pulse"></div>
-                        <div className="h-4 w-28 bg-muted-foreground/20 animate-pulse rounded mb-1 mt-1"></div>
-                        <div className="h-3 w-16 bg-primary/10 animate-pulse rounded-full"></div>
-                      </div>
-                    </>
-                  ) : (
-                    recentActivities.slice(0, 2).map((activity) => (
-                      <div
-                        key={activity.id}
-                        className="relative pl-4 border-l-2 border-primary/20 hover:border-primary/40 transition-colors duration-300"
-                      >
-                        <div className="absolute -left-1.5 top-1 w-3 h-3 bg-primary rounded-full border-2 border-card"></div>
-                        <p className="text-sm text-foreground leading-relaxed mb-1 font-medium">
-                          {activity.type}
-                        </p>
-                        <p className="text-xs text-primary font-semibold bg-primary/10 px-2 py-1 rounded-full inline-block">
-                          {activity.time_ago}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-              <div className="bg-gradient-to-br from-warning to-warning/80 p-4 rounded-2xl shadow-lg group-hover:shadow-warning/25 transition-shadow duration-500">
-                <svg
-                  className="w-8 h-8 text-warning-foreground"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <section className="py-10">
-          <div className="grid gap-6 md:grid-cols-2">
-            <a
-              href="https://bridalarcade.lk/"
-              target="_blank"
-              rel="noopener"
-              className="group relative overflow-hidden rounded-2xl shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              <img
-                src={BrideBackground}
-                alt="Bridal Arcade"
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-
-              <div className="absolute inset-0 bg-black/50 transition-colors duration-300 group-hover:bg-black/60"></div>
-
-              <div className="relative z-10 p-6 sm:p-8 min-h-[220px] flex items-end">
-                <div>
-                  <h3 className="text-white text-2xl font-semibold">
-                    Visit Website
-                  </h3>
-                  <p className="mt-1 text-white/80">
-                    Explore the full catalog and updates.
-                  </p>
-                  <span
-                    className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/95 px-5 py-2.5 text-sm font-medium text-gray-900
-                   shadow-md transition-all duration-300 group-hover:translate-y-[-2px] group-hover:shadow-lg"
-                  >
-                    Visit Now
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </span>
-                </div>
-              </div>
-            </a>
-
-            <a
-              href="https://chat.whatsapp.com/G45BmT2VSKy5fQWIlxsj0I"
-              target="_blank"
-              rel="noopener"
-              className="group relative overflow-hidden rounded-2xl shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
-            >
-              <img
-                src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1400&auto=format&fit=crop"
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-
-              <div className="absolute inset-0 bg-black/50 transition-colors duration-300 group-hover:bg-black/60"></div>
-
-              <div className="relative z-10 p-6 sm:p-8 min-h-[220px] flex items-end">
-                <div>
-                  <h3 className="text-white text-2xl font-semibold">
-                    Join Our WhatsApp Group
-                  </h3>
-                  <p className="mt-1 text-white/80">
-                    Get tips, drops, and support.
-                  </p>
-                  <span
-                    className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-500/95 px-5 py-2.5 text-sm font-medium text-white
-                   shadow-md transition-all duration-300 group-hover:translate-y-[-2px] group-hover:shadow-lg"
-                  >
-                    Chat Now
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </span>
-                </div>
-              </div>
-            </a>
           </div>
         </section>
       </div>
-
-      <Navigation />
-    </div>
+    </AppShell>
   );
-};
+}
 
-export default Dashboard;
+function MetricCard({ icon, label, value, note, loading, feature = false }: { icon: React.ReactNode; label: string; value: string; note: string; loading: boolean; feature?: boolean }) {
+  return <div className={`rounded-2xl border p-5 shadow-[0_10px_35px_rgba(55,28,40,.05)] sm:p-6 ${feature ? "border-primary/10 bg-primary text-white" : "border-border-light bg-white"}`}>
+    <div className="flex items-center justify-between"><span className={`grid h-11 w-11 place-items-center rounded-xl [&>svg]:h-5 [&>svg]:w-5 ${feature ? "bg-white/12 text-[#e0c680]" : "bg-accent text-primary"}`}>{icon}</span></div>
+    <p className={`mt-5 text-xs font-bold uppercase tracking-[0.12em] ${feature ? "text-white/55" : "text-muted-foreground"}`}>{label}</p>
+    {loading ? <div className={`mt-2 h-9 w-28 animate-pulse rounded-lg ${feature ? "bg-white/10" : "bg-muted"}`} /> : <p className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">{value}</p>}
+    <p className={`mt-2 text-xs ${feature ? "text-white/50" : "text-muted-foreground"}`}>{note}</p>
+  </div>;
+}
+
+function ActivitySkeleton() { return <div className="space-y-2">{[1,2,3,4].map((n) => <div key={n} className="flex gap-3 p-3"><div className="h-9 w-9 animate-pulse rounded-full bg-muted"/><div className="flex-1"><div className="h-4 w-2/3 animate-pulse rounded bg-muted"/><div className="mt-2 h-3 w-24 animate-pulse rounded bg-muted"/></div></div>)}</div>; }
+function EmptyActivity() { return <div className="grid min-h-56 place-items-center px-6 text-center"><div><span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-muted text-muted-foreground"><Clock3 size={20}/></span><p className="mt-3 font-semibold">No recent activity</p><p className="mt-1 text-sm text-muted-foreground">New order updates will appear here.</p></div></div>; }
+function normalizeActivity(value: unknown, index: number): RecentActivity | null { if (!value || typeof value !== "object") return null; const item = value as Record<string, unknown>; const type = String(item.type || "").trim(); if (!type) return null; return { id: Number(item.id) || index + 1, type, time_ago: String(item.time_ago || "Recently") }; }
+function normalizeDashboard(value: unknown): { stats: Stats; activities: RecentActivity[] } { const payload = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; return { stats: { totalSales: Number(payload.total_sales) || 0, totalOrders: Number(payload.orders) || 0, categories: Array.isArray(payload.categories) ? payload.categories.filter((item): item is string => typeof item === "string") : [] }, activities: Array.isArray(payload.activity) ? payload.activity.map((item, index) => normalizeActivity(item, index)).filter((item): item is RecentActivity => item !== null) : [] }; }

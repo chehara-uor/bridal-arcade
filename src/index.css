@@ -1,146 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Rental Check Design System - Professional rental management interface
-All colors MUST be HSL for proper theme support.
-*/
-
 @layer base {
   :root {
-    /* Core backgrounds and surfaces */
-    --background: 0 0% 98%;
+    --background: 36 33% 97%;
     --surface: 0 0% 100%;
-    --surface-elevated: 0 0% 100%;
-    --foreground: 210 11% 15%;
-
-    /* Card system */
+    --surface-elevated: 38 38% 99%;
+    --foreground: 330 19% 13%;
     --card: 0 0% 100%;
-    --card-foreground: 210 11% 15%;
-    --card-hover: 158 25% 98%;
-
-    /* Popover system */
+    --card-foreground: 330 19% 13%;
+    --card-hover: 36 33% 97%;
     --popover: 0 0% 100%;
-    --popover-foreground: 210 11% 15%;
-
-    /* Primary brand colors - Deep burgundy theme */
-    --primary: 325 55% 30%;
-    --primary-light: 325 55% 50%;
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 325 55% 25%;
-
-    /* Secondary accent - Warm gold */
-    --secondary: 44 44% 56%;
-    --secondary-light: 44 44% 76%;
-    --secondary-foreground: 0 0% 100%;
-    --secondary-hover: 44 44% 51%;
-
-    /* Neutral tones */
-    --muted: 210 11% 96%;
-    --muted-foreground: 210 11% 45%;
-    --muted-dark: 210 11% 90%;
-
-    /* Accent colors */
-    --accent: 44 44% 92%;
-    --accent-foreground: 325 55% 30%;
-
-    /* Status colors */
-    --success: 142 71% 45%;
+    --popover-foreground: 330 19% 13%;
+    --primary: 334 52% 25%;
+    --primary-light: 334 43% 37%;
+    --primary-foreground: 36 33% 98%;
+    --primary-hover: 334 58% 19%;
+    --secondary: 39 46% 54%;
+    --secondary-light: 40 53% 77%;
+    --secondary-foreground: 330 19% 13%;
+    --secondary-hover: 39 50% 47%;
+    --muted: 36 25% 94%;
+    --muted-foreground: 330 7% 43%;
+    --muted-dark: 35 18% 88%;
+    --accent: 39 52% 92%;
+    --accent-foreground: 334 52% 25%;
+    --success: 156 43% 34%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --warning: 32 70% 47%;
     --warning-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
+    --destructive: 0 63% 48%;
     --destructive-foreground: 0 0% 100%;
-
-    /* Input and border system */
-    --border: 210 11% 88%;
-    --border-light: 210 11% 92%;
-    --input: 210 11% 96%;
-    --input-border: 210 11% 85%;
-    --ring: 325 55% 30%;
-
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(325 55% 30%), hsl(325 55% 50%));
-    --gradient-secondary: linear-gradient(135deg, hsl(44 44% 56%), hsl(44 44% 76%));
-    --gradient-surface: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 11% 98%));
-
-    /* Shadows */
-    --shadow-sm: 0 1px 2px hsl(210 11% 15% / 0.08);
-    --shadow-md: 0 4px 12px hsl(210 11% 15% / 0.12);
-    --shadow-lg: 0 10px 25px hsl(210 11% 15% / 0.15);
-    --shadow-card: 0 2px 8px hsl(210 11% 15% / 0.08);
-
-    /* Animations */
-    --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 34 20% 86%;
+    --border-light: 36 23% 91%;
+    --input: 0 0% 100%;
+    --input-border: 34 20% 82%;
+    --ring: 334 52% 25%;
+    --radius: 0.9rem;
   }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+  * { @apply border-border; }
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
+  html { scroll-behavior: smooth; }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', sans-serif;
+    min-width: 320px;
   }
-  .auth-background{
-    background: linear-gradient(135deg, #FFD700, #4B0082);
-  }
+
+  button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+  button, a { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2; }
 }
+
+@layer components {
+  .display-font { font-family: 'Playfair Display', serif; }
+  .surface-card { @apply rounded-2xl border border-border-light bg-card shadow-[0_10px_35px_rgba(55,28,40,0.055)]; }
+  .field-label { @apply mb-2 block text-sm font-semibold text-foreground; }
+  .field-input { @apply h-12 w-full rounded-xl border border-input-border bg-white px-4 text-[15px] text-foreground outline-none transition placeholder:text-muted-foreground/70 focus:border-primary focus:ring-4 focus:ring-primary/10; }
+  .primary-button { @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-[0_8px_20px_rgba(97,31,64,0.18)] transition hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55; }
+  .secondary-button { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-white px-4 text-sm font-semibold text-foreground transition hover:border-primary/30 hover:bg-accent/50 active:scale-[0.98]; }
+  .page-title { @apply display-font text-3xl font-bold tracking-tight text-foreground sm:text-4xl; }
+  .eyebrow { @apply text-xs font-bold uppercase tracking-[0.16em] text-primary/70; }
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up { animation: fade-up .45s ease-out both; }
