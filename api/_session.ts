@@ -49,11 +49,13 @@ export function readSession(request: { headers: Record<string, string | string[]
 }
 
 export function sessionCookie(token: string): string {
-  return `${COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${SESSION_SECONDS}`;
+  const secure = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL) ? "; Secure" : "";
+  return `${COOKIE_NAME}=${token}; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=${SESSION_SECONDS}`;
 }
 
 export function expiredSessionCookie(): string {
-  return `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
+  const secure = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL) ? "; Secure" : "";
+  return `${COOKIE_NAME}=; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=0`;
 }
 
 export function wordpressConfig() {

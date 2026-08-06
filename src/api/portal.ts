@@ -38,6 +38,10 @@ export async function fetchDashboard() {
   return (await client.get("/dashboard")).data;
 }
 
+export async function fetchRecentActivity() {
+  return (await client.get("/recent-activity")).data;
+}
+
 // These remain compatibility calls until their corresponding server routes are enabled.
 export async function fetchProducts(email: string) {
   if (!email) throw new Error("Your session is missing an email address. Please sign in again.");
