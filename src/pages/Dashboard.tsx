@@ -25,7 +25,7 @@ export default function Dashboard() {
       setLoading(false);
     }
     try {
-      const data = await fetchDashboard(sessionStorage.getItem("userEmail") || "");
+      const data = await fetchDashboard();
       sessionStorage.setItem("dashboardData", JSON.stringify(data));
       const view = normalizeDashboard(data);
       setStats(view.stats);
@@ -114,4 +114,4 @@ function MetricCard({ icon, label, value, note, loading, feature = false }: { ic
 function ActivitySkeleton() { return <div className="space-y-2">{[1,2,3,4].map((n) => <div key={n} className="flex gap-3 p-3"><div className="h-9 w-9 animate-pulse rounded-full bg-muted"/><div className="flex-1"><div className="h-4 w-2/3 animate-pulse rounded bg-muted"/><div className="mt-2 h-3 w-24 animate-pulse rounded bg-muted"/></div></div>)}</div>; }
 function EmptyActivity() { return <div className="grid min-h-56 place-items-center px-6 text-center"><div><span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-muted text-muted-foreground"><Clock3 size={20}/></span><p className="mt-3 font-semibold">No recent activity</p><p className="mt-1 text-sm text-muted-foreground">New order updates will appear here.</p></div></div>; }
 function normalizeActivity(value: unknown, index: number): RecentActivity | null { if (!value || typeof value !== "object") return null; const item = value as Record<string, unknown>; const type = String(item.type || "").trim(); if (!type) return null; return { id: Number(item.id) || index + 1, type, time_ago: String(item.time_ago || "Recently") }; }
-function normalizeDashboard(value: unknown): { stats: Stats; activities: RecentActivity[] } { const payload = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; return { stats: { totalSales: Number(payload.total_sales) || 0, totalOrders: Number(payload.orders) || 0, categories: Array.isArray(payload.categories) ? payload.categories.filter((item): item is string => typeof item === "string") : [] }, activities: Array.isArray(payload.activity) ? payload.activity.map((item, index) => normalizeActivity(item, index)).filter((item): item is RecentActivity => item !== null) : [] }; }
+function normalizeDashboard(value: unknown): { stats: Stats; activities: RecentActivity[] } { const payload = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; const activity = payload.lead_tracker_activity ?? payload.recent_activity ?? payload.activity; return { stats: { totalSales: Number(payload.total_sales) || 0, totalOrders: Number(payload.orders) || 0, categories: Array.isArray(payload.categories) ? payload.categories.filter((item): item is string => typeof item === "string") : [] }, activities: Array.isArray(activity) ? activity.map((item, index) => normalizeActivity(item, index)).filter((item): item is RecentActivity => item !== null) : [] }; }
