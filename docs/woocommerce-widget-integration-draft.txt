@@ -1,0 +1,310 @@
+BRIDAL ARCADE WIDGET -> WOOCOMMERCE DRAFT PRODUCT
+=================================================
+
+STATUS
+------
+This is an integration blueprint only. Do not paste live WooCommerce consumer
+keys into the React widget. VITE_* variables are visible to every browser user.
+
+The recommended flow is:
+
+1. Widget collects and validates the submission.
+2. WordPress sends and verifies the real OTP on the server.
+3. WordPress issues a short-lived, single-use submission token.
+4. Widget POSTs the verified submission to the custom endpoint below.
+5. WordPress sanitizes the request, creates a WooCommerce product as "draft",
+   imports the three cropped images, and returns the draft product ID.
+
+
+SESSION PAYLOAD CURRENTLY PREPARED BY THE WIDGET
+------------------------------------------------
+Before OTP verification:
+  sessionStorage key: bridalArcadeWidgetDraft
+
+After successful simulated verification:
+  sessionStorage key: bridalArcadeVerifiedSubmission
+
+Shape:
+{
+  "personal": {
+    "firstName": "Ama",
+    "lastName": "Perera",
+    "email": "ama@example.com",
+    "mobile": "0701234567",
+    "weddingYear": "2024",
+    "livingArea": "Maharagama"
+  },
+  "product": {
+    "title": "Ivory Kandyan Bridal Saree",
+    "description": "Ivory Kandyan saree with hand bead work..."
+  },
+  "item": {
+    "wearType": "Kandyan Saree",
+    "wearCount": "Only one",
+    "action": "Rent or Sell",
+    "rentalPrice": "65000",
+    "sellingPrice": "180000"
+  },
+  "images": [
+    "data:image/jpeg;base64,...",
+    "data:image/jpeg;base64,...",
+    "data:image/jpeg;base64,..."
+  ],
+  "verifiedAt": "2026-08-04T12:00:00.000Z",
+  "status": "verified"
+}
+
+
+DIRECT WOOCOMMERCE CURL (SERVER-SIDE TESTING ONLY)
+--------------------------------------------------
+This tests the official WooCommerce REST API. Image values must be public HTTPS
+URLs for this direct API example. Never run this from browser JavaScript.
+
+curl --request POST \
+  --url "https://bridalarcade.lk/wp-json/wc/v3/products" \
+  --user "ck_REPLACE_WITH_CONSUMER_KEY:cs_REPLACE_WITH_CONSUMER_SECRET" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "Ivory Kandyan Bridal Saree",
+    "type": "simple",
+    "status": "draft",
+    "catalog_visibility": "hidden",
+    "description": "Ivory Kandyan saree with hand bead work.",
+    "regular_price": "65000",
+    "meta_data": [
+      { "key": "_ba_owner_first_name", "value": "Ama" },
+      { "key": "_ba_owner_last_name", "value": "Perera" },
+      { "key": "_ba_owner_email", "value": "ama@example.com" },
+      { "key": "_ba_owner_mobile", "value": "0701234567" },
+      { "key": "_ba_wedding_year", "value": "2024" },
+      { "key": "_ba_living_area", "value": "Maharagama" },
+      { "key": "_ba_wear_type", "value": "Kandyan Saree" },
+      { "key": "_ba_wear_count", "value": "Only one" },
+      { "key": "_ba_desired_action", "value": "Rent or Sell" },
+      { "key": "_ba_expected_rental_price", "value": "65000" },
+      { "key": "_ba_expected_selling_price", "value": "180000" }
+    ],
+    "images": [
+      { "src": "https://example.com/front.jpg", "name": "Front view" },
+      { "src": "https://example.com/full.jpg", "name": "Full view" },
+      { "src": "https://example.com/detail.jpg", "name": "Detail view" }
+    ]
+  }'
+
+
+RECOMMENDED CUSTOM WORDPRESS REST ENDPOINT (PLUGIN DRAFT)
+---------------------------------------------------------
+Put this in a small custom plugin, not in the React application. The token
+verification function is deliberately left as an integration point for the
+future OTP service. Do not use __return_true as the permission callback in
+production.
+
+<?php
+/**
+ * Plugin Name: Bridal Arcade Vendor Widget API
+ * Description: Creates OTP-verified vendor submissions as WooCommerce drafts.
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+add_action( 'rest_api_init', function () {
+    register_rest_route( 'bridal-arcade/v1', '/vendor-products', array(
+        'methods'             => WP_REST_Server::CREATABLE,
+        'callback'            => 'ba_create_vendor_draft_product',
+        'permission_callback' => 'ba_verify_widget_submission_token',
+    ) );
+} );
+
+/**
+ * Replace this with server-side verification of a short-lived, single-use
+ * token issued only after the mobile OTP has been verified.
+ */
+function ba_verify_widget_submission_token( WP_REST_Request $request ) {
+    $token = sanitize_text_field( $request->get_header( 'X-Submission-Token' ) );
+
+    if ( ! $token ) {
+        return new WP_Error(
+            'missing_submission_token',
+            'A verified submission token is required.',
+            array( 'status' => 401 )
+        );
+    }
+
+    // TODO: Look up a hashed token stored by the OTP verification endpoint.
+    // Verify expiry, mobile number, and unused state; then atomically consume it.
+    $is_valid = apply_filters( 'ba_is_valid_widget_submission_token', false, $token );
+
+    if ( ! $is_valid ) {
+        return new WP_Error(
+            'invalid_submission_token',
+            'The submission token is invalid or expired.',
+            array( 'status' => 403 )
+        );
+    }
+
+    return true;
+}
+
+function ba_create_vendor_draft_product( WP_REST_Request $request ) {
+    if ( ! class_exists( 'WooCommerce' ) || ! class_exists( 'WC_Product_Simple' ) ) {
+        return new WP_Error( 'woocommerce_missing', 'WooCommerce is unavailable.', array( 'status' => 503 ) );
+    }
+
+    $body     = $request->get_json_params();
+    $personal = isset( $body['personal'] ) && is_array( $body['personal'] ) ? $body['personal'] : array();
+    $listing  = isset( $body['product'] ) && is_array( $body['product'] ) ? $body['product'] : array();
+    $item     = isset( $body['item'] ) && is_array( $body['item'] ) ? $body['item'] : array();
+    $images   = isset( $body['images'] ) && is_array( $body['images'] ) ? $body['images'] : array();
+
+    $first_name    = sanitize_text_field( $personal['firstName'] ?? '' );
+    $last_name     = sanitize_text_field( $personal['lastName'] ?? '' );
+    $email         = sanitize_email( $personal['email'] ?? '' );
+    $mobile        = preg_replace( '/[^0-9+]/', '', (string) ( $personal['mobile'] ?? '' ) );
+    $wedding_year  = absint( $personal['weddingYear'] ?? 0 );
+    $living_area   = sanitize_text_field( $personal['livingArea'] ?? '' );
+    $title         = sanitize_text_field( $listing['title'] ?? '' );
+    $description   = wp_kses_post( $listing['description'] ?? '' );
+    $wear_type     = sanitize_text_field( $item['wearType'] ?? '' );
+    $wear_count    = sanitize_text_field( $item['wearCount'] ?? '' );
+    $action        = sanitize_text_field( $item['action'] ?? '' );
+    $rental_price  = wc_format_decimal( $item['rentalPrice'] ?? '' );
+    $selling_price = wc_format_decimal( $item['sellingPrice'] ?? '' );
+
+    $allowed_actions = array( 'Rent Only', 'Sell Only', 'Rent or Sell' );
+    $allowed_counts  = array( 'Only one', '2 times', '3 times' );
+    $current_year    = (int) gmdate( 'Y' );
+
+    if ( strlen( $first_name ) < 2 || strlen( $last_name ) < 2 ) {
+        return new WP_Error( 'invalid_name', 'A valid owner name is required.', array( 'status' => 400 ) );
+    }
+    if ( ! is_email( $email ) ) {
+        return new WP_Error( 'invalid_email', 'A valid email is required.', array( 'status' => 400 ) );
+    }
+    if ( ! preg_match( '/^(?:\\+94|0)7\\d{8}$/', $mobile ) ) {
+        return new WP_Error( 'invalid_mobile', 'A valid Sri Lankan mobile number is required.', array( 'status' => 400 ) );
+    }
+    if ( $wedding_year < 1950 || $wedding_year > $current_year + 5 ) {
+        return new WP_Error( 'invalid_wedding_year', 'The wedding year is invalid.', array( 'status' => 400 ) );
+    }
+    if ( strlen( $title ) < 5 || strlen( wp_strip_all_tags( $description ) ) < 20 ) {
+        return new WP_Error( 'invalid_listing', 'A title and complete description are required.', array( 'status' => 400 ) );
+    }
+    if ( ! in_array( $action, $allowed_actions, true ) || ! in_array( $wear_count, $allowed_counts, true ) ) {
+        return new WP_Error( 'invalid_item_details', 'The item details are invalid.', array( 'status' => 400 ) );
+    }
+    if ( count( $images ) !== 3 ) {
+        return new WP_Error( 'invalid_images', 'Exactly three cropped images are required.', array( 'status' => 400 ) );
+    }
+
+    $product = new WC_Product_Simple();
+    $product->set_name( $title );
+    $product->set_description( $description );
+    $product->set_status( 'draft' );
+    $product->set_catalog_visibility( 'hidden' );
+
+    // WooCommerce requires a regular price. Prefer rental price when renting is allowed.
+    $primary_price = in_array( $action, array( 'Rent Only', 'Rent or Sell' ), true ) ? $rental_price : $selling_price;
+    if ( $primary_price !== '' ) {
+        $product->set_regular_price( $primary_price );
+    }
+
+    $product->update_meta_data( '_ba_owner_first_name', $first_name );
+    $product->update_meta_data( '_ba_owner_last_name', $last_name );
+    $product->update_meta_data( '_ba_owner_email', $email );
+    $product->update_meta_data( '_ba_owner_mobile', $mobile );
+    $product->update_meta_data( '_ba_wedding_year', $wedding_year );
+    $product->update_meta_data( '_ba_living_area', $living_area );
+    $product->update_meta_data( '_ba_wear_type', $wear_type );
+    $product->update_meta_data( '_ba_wear_count', $wear_count );
+    $product->update_meta_data( '_ba_desired_action', $action );
+    $product->update_meta_data( '_ba_expected_rental_price', $rental_price );
+    $product->update_meta_data( '_ba_expected_selling_price', $selling_price );
+    $product->update_meta_data( '_ba_widget_otp_verified', 'yes' );
+
+    $product_id = $product->save();
+    if ( ! $product_id ) {
+        return new WP_Error( 'product_create_failed', 'The draft product could not be created.', array( 'status' => 500 ) );
+    }
+
+    $attachment_ids = array();
+    foreach ( $images as $index => $data_url ) {
+        $attachment_id = ba_import_widget_data_image( $data_url, $product_id, $title . '-' . ( $index + 1 ) );
+        if ( is_wp_error( $attachment_id ) ) {
+            wp_delete_post( $product_id, true );
+            return $attachment_id;
+        }
+        $attachment_ids[] = $attachment_id;
+    }
+
+    $product->set_image_id( $attachment_ids[0] );
+    $product->set_gallery_image_ids( array_slice( $attachment_ids, 1 ) );
+    $product->save();
+
+    return new WP_REST_Response( array(
+        'success'    => true,
+        'product_id' => $product_id,
+        'status'     => 'draft',
+        'message'    => 'The bridal wear submission was saved for review.',
+    ), 201 );
+}
+
+function ba_import_widget_data_image( $data_url, $parent_id, $name ) {
+    if ( ! is_string( $data_url ) || ! preg_match( '#^data:image/(jpeg|png|webp);base64,#i', $data_url, $matches ) ) {
+        return new WP_Error( 'invalid_image_format', 'Only JPEG, PNG, and WebP images are allowed.', array( 'status' => 400 ) );
+    }
+
+    $extension = strtolower( $matches[1] );
+    $extension = 'jpeg' === $extension ? 'jpg' : $extension;
+    $encoded   = substr( $data_url, strpos( $data_url, ',' ) + 1 );
+    $binary    = base64_decode( $encoded, true );
+
+    if ( false === $binary || strlen( $binary ) > 5 * MB_IN_BYTES ) {
+        return new WP_Error( 'invalid_image_size', 'Each image must be smaller than 5 MB.', array( 'status' => 400 ) );
+    }
+
+    $filename = sanitize_file_name( $name . '-' . wp_generate_password( 6, false ) . '.' . $extension );
+    $upload   = wp_upload_bits( $filename, null, $binary );
+    if ( ! empty( $upload['error'] ) ) {
+        return new WP_Error( 'image_upload_failed', $upload['error'], array( 'status' => 500 ) );
+    }
+
+    $mime = wp_check_filetype( $upload['file'] );
+    $attachment_id = wp_insert_attachment( array(
+        'post_mime_type' => $mime['type'],
+        'post_title'     => sanitize_text_field( $name ),
+        'post_status'    => 'inherit',
+        'post_parent'    => $parent_id,
+    ), $upload['file'], $parent_id, true );
+
+    if ( is_wp_error( $attachment_id ) ) {
+        return $attachment_id;
+    }
+
+    require_once ABSPATH . 'wp-admin/includes/image.php';
+    $metadata = wp_generate_attachment_metadata( $attachment_id, $upload['file'] );
+    wp_update_attachment_metadata( $attachment_id, $metadata );
+    return $attachment_id;
+}
+
+
+CUSTOM ENDPOINT CURL (AFTER REAL OTP VERIFICATION)
+--------------------------------------------------
+curl --request POST \
+  --url "https://bridalarcade.lk/wp-json/bridal-arcade/v1/vendor-products" \
+  --header "Content-Type: application/json" \
+  --header "X-Submission-Token: SHORT_LIVED_TOKEN_FROM_OTP_ENDPOINT" \
+  --data @verified-submission.json
+
+
+PRODUCTION CHECKLIST
+--------------------
+- Implement server-side OTP sending, expiry, attempt limits, and verification.
+- Hash submission tokens in the database; make them single-use and short-lived.
+- Add per-IP and per-mobile rate limiting to OTP and submission endpoints.
+- Add CORS rules only for the exact portal/WordPress origins in use.
+- Never expose WooCommerce consumer secrets in Vite environment variables.
+- Add server-side MIME inspection; do not trust the data URL MIME alone.
+- Consider malware scanning and stricter image dimension/pixel limits.
+- Confirm privacy consent and retention rules for personal data and photographs.
+- Log product creation failures without logging OTPs, secrets, or base64 images.
+- Keep every submitted WooCommerce product in draft until staff approval.

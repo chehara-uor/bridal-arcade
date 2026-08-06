@@ -10,6 +10,7 @@ import Orders from "./pages/Orders";
 import MyAccount from "./pages/MyAccount";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
+import VendorWidget from "./pages/VendorWidget";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
               <MyAccount />
             </ProtectedRoute>
           } />
+          <Route path="/vendor-widget" element={<VendorWidget />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
