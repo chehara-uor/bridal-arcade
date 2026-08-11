@@ -1,4 +1,4 @@
-import { LayoutDashboard, LogOut, Package, ReceiptText, UserRound } from "lucide-react";
+import { LayoutDashboard, LogOut, Package, UserRound } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import Logo from "../assets/logo.png";
 import { logoutPartner } from "../api/portal";
@@ -9,7 +9,6 @@ const whatsappUrl = `https://wa.me/94707997883?text=${whatsappMessage}`;
 const items = [
   { label: "Home", desktopLabel: "Overview", path: "/bride/dashboard", icon: LayoutDashboard },
   { label: "Items", desktopLabel: "My items", path: "/bride/products", icon: Package },
-  { label: "Orders", desktopLabel: "Orders", path: "/bride/orders", icon: ReceiptText },
   { label: "Account", desktopLabel: "Account", path: "/bride/my-account", icon: UserRound },
 ];
 

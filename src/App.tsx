@@ -6,7 +6,6 @@ import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
-import Orders from "./pages/Orders";
 import MyAccount from "./pages/MyAccount";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
@@ -40,11 +39,7 @@ const App = () => (
               <Products />
             </ProtectedRoute>
           } />
-          <Route path="/bride/orders" element={
-            <ProtectedRoute accountType="individual">
-              <Orders />
-            </ProtectedRoute>
-          } />
+          <Route path="/bride/orders" element={<Navigate to="/bride/dashboard" replace />} />
           <Route path="/bride/my-account" element={
             <ProtectedRoute accountType="individual">
               <MyAccount />
@@ -57,7 +52,7 @@ const App = () => (
           <Route path="/vendor/account" element={<ProtectedRoute accountType="business"><VendorPlaceholder page="account" /></ProtectedRoute>} />
           <Route path="/dashboard" element={<Navigate to="/bride/dashboard" replace />} />
           <Route path="/products" element={<Navigate to="/bride/products" replace />} />
-          <Route path="/orders" element={<Navigate to="/bride/orders" replace />} />
+          <Route path="/orders" element={<Navigate to="/bride/dashboard" replace />} />
           <Route path="/my-account" element={<Navigate to="/bride/my-account" replace />} />
           <Route path="/vendor-widget" element={<VendorWidget />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

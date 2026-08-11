@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight, Bell, ChevronLeft, ChevronRight, CircleDollarSign, Clock3, Eye, MessageCircle, Package, ReceiptText, Sparkles, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppShell from "../components/AppShell";
-import { fetchDashboard, fetchOrders, fetchProducts, fetchRecentActivity, getRequestErrorMessage, readSessionCache } from "../api/portal";
+import { fetchDashboard, fetchProducts, fetchRecentActivity, getRequestErrorMessage, readSessionCache } from "../api/portal";
 
 interface RecentActivity { id: number; eventType: string; title: string; message: string; inquiryId: string; productName: string; productUrl: string; timeAgo: string; }
 interface Stats { totalSales: number; totalOrders: number; categories: string[]; }
@@ -54,7 +54,6 @@ export default function Dashboard() {
   useEffect(() => {
     loadDashboard();
     prefetch("productData", fetchProducts);
-    prefetch("orderData", fetchOrders);
   }, []);
 
   useEffect(() => {
