@@ -1,15 +1,15 @@
 import { Check, CircleHelp, LockKeyhole, LogOut, Mail, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AppShell from "../components/AppShell";
+import { logoutPartner } from "../api/portal";
 
 export default function MyAccount() {
   const name = sessionStorage.getItem("userName")?.trim() || "Bridal Arcade Partner";
   const email = sessionStorage.getItem("userEmail")?.trim() || "Email unavailable";
   const navigate = useNavigate();
 
-  const logout = () => {
-    localStorage.removeItem("isAuthenticated");
-    sessionStorage.clear();
+  const logout = async () => {
+    await logoutPartner();
     navigate("/", { replace: true });
   };
 

@@ -4,7 +4,7 @@ import { ArrowRight, Eye, EyeOff, Heart, LockKeyhole, Mail, ShieldCheck, UserRou
 import { ToastContainer, toast } from "react-toastify";
 import Logo from "../assets/logo.png";
 import { registerUser } from "../api/register";
-import { getRequestErrorMessage, loginPartner } from "../api/portal";
+import { getRequestErrorMessage, getSession, loginPartner, storeUser } from "../api/portal";
 import "react-toastify/dist/ReactToastify.css";
 
 interface RegisterData { name: string; username: string; email: string; password: string; }
@@ -21,10 +21,9 @@ export default function Auth() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const hasSession = Boolean(sessionStorage.getItem("userToken") && sessionStorage.getItem("userID") && sessionStorage.getItem("userEmail"));
-    if (localStorage.getItem("isAuthenticated") === "true" && hasSession) {
-      navigate("/dashboard", { replace: true });
-    }
+    getSession().then((user) => { storeUser(user); navigate("/dashboard", { replace: true }); }).catch(() => {
+      localStorage.removeItem("isAuthenticated"); sessionStorage.clear();
+    });
   }, [navigate]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,8 +42,8 @@ export default function Auth() {
   const validate = (): boolean => {
     const next: FormErrors = {};
     const email = formData.email.trim();
-    if (!email) next.email = "Enter your email address.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = "Enter a valid email address.";
+    if (!email) next.email = isLogin ? "Enter your username or email address." : "Enter your email address.";
+    else if (!isLogin && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = "Enter a valid email address.";
 
     if (!formData.password) next.password = "Enter your password.";
     if (!isLogin) {
@@ -65,13 +64,9 @@ export default function Auth() {
     setLoading(true);
     try {
       if (isLogin) {
-        const data = await loginPartner(formData.email.trim().toLowerCase(), formData.password);
+        const user = await loginPartner(formData.email.trim(), formData.password);
         sessionStorage.clear();
-        sessionStorage.setItem("userToken", data.token);
-        sessionStorage.setItem("userID", String(data.user_id));
-        sessionStorage.setItem("userName", data.firstname?.trim() || "Partner");
-        sessionStorage.setItem("userEmail", formData.email.trim().toLowerCase());
-        localStorage.setItem("isAuthenticated", "true");
+        storeUser(user);
         navigate("/dashboard");
       } else {
         await registerOwner(formData);
@@ -133,7 +128,7 @@ export default function Auth() {
               <Field label="First name" icon={<UserRound size={18} />} error={errors.name}><input className="field-input pl-11" name="name" value={formData.name} onChange={handleChange} placeholder="Your name" autoComplete="given-name" aria-invalid={Boolean(errors.name)} required /></Field>
               <Field label="Username" icon={<UserRound size={18} />} error={errors.username}><input className="field-input pl-11" name="username" value={formData.username} onChange={handleChange} placeholder="your_name" autoComplete="username" aria-invalid={Boolean(errors.username)} required /></Field>
             </div>}
-            <Field label="Email address" icon={<Mail size={18} />} error={errors.email}><input className="field-input pl-11" type="email" name="email" value={formData.email} onChange={handleChange} placeholder="you@example.com" autoComplete="email" aria-invalid={Boolean(errors.email)} required /></Field>
+            <Field label={isLogin ? "Username or email" : "Email address"} icon={<Mail size={18} />} error={errors.email}><input className="field-input pl-11" type={isLogin ? "text" : "email"} name="email" value={formData.email} onChange={handleChange} placeholder={isLogin ? "Username or you@example.com" : "you@example.com"} autoComplete="username" aria-invalid={Boolean(errors.email)} required /></Field>
             <div className={!isLogin ? "grid gap-5 sm:grid-cols-2" : ""}>
               <Field label="Password" icon={<LockKeyhole size={18} />} error={errors.password}>
                 <input className="field-input pl-11 pr-12" type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} placeholder={isLogin ? "Enter password" : "At least 8 characters"} autoComplete={isLogin ? "current-password" : "new-password"} aria-invalid={Boolean(errors.password)} required />

@@ -1,35 +1,41 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, CalendarCheck2, CircleDollarSign, Clock3, Package, ReceiptText, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowRight, Bell, ChevronLeft, ChevronRight, CircleDollarSign, Clock3, Eye, MessageCircle, Package, ReceiptText, Sparkles, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppShell from "../components/AppShell";
-import { fetchDashboard, fetchOrders, fetchProducts, getRequestErrorMessage, readSessionCache } from "../api/portal";
+import { fetchDashboard, fetchOrders, fetchProducts, fetchRecentActivity, getRequestErrorMessage, readSessionCache } from "../api/portal";
 
-interface RecentActivity { id: number; type: string; time_ago: string; }
+interface RecentActivity { id: number; eventType: string; title: string; message: string; inquiryId: string; productName: string; productUrl: string; timeAgo: string; }
 interface Stats { totalSales: number; totalOrders: number; categories: string[]; }
+const ACTIVITY_PAGE_SIZE = 3;
 
 export default function Dashboard() {
   const [activities, setActivities] = useState<RecentActivity[]>([]);
   const [stats, setStats] = useState<Stats>({ totalSales: 0, totalOrders: 0, categories: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activityPage, setActivityPage] = useState(1);
   const name = sessionStorage.getItem("userName") || "Partner";
+  const activityPageCount = Math.max(1, Math.ceil(activities.length / ACTIVITY_PAGE_SIZE));
+  const visibleActivities = activities.slice((activityPage - 1) * ACTIVITY_PAGE_SIZE, activityPage * ACTIVITY_PAGE_SIZE);
 
   const loadDashboard = async () => {
     setLoading(true); setError("");
     const cached = readSessionCache<Record<string, unknown>>("dashboardData");
+    const cachedActivity = readSessionCache<Record<string, unknown>>("recentActivityData");
     const validCache = cached && typeof cached === "object" && !Array.isArray(cached) ? cached : null;
     if (validCache) {
       const cachedView = normalizeDashboard(validCache);
       setStats(cachedView.stats);
-      setActivities(cachedView.activities);
       setLoading(false);
     }
+    if (cachedActivity) setActivities(normalizeRecentActivity(cachedActivity));
     try {
-      const data = await fetchDashboard(sessionStorage.getItem("userEmail") || "");
+      const [data, activityData] = await Promise.all([fetchDashboard(), fetchRecentActivity()]);
       sessionStorage.setItem("dashboardData", JSON.stringify(data));
+      sessionStorage.setItem("recentActivityData", JSON.stringify(activityData));
       const view = normalizeDashboard(data);
       setStats(view.stats);
-      setActivities(view.activities);
+      setActivities(normalizeRecentActivity(activityData));
     } catch (requestError) {
       const message = getRequestErrorMessage(requestError, "We couldn't load your overview. Please try again.");
       setError(validCache ? `${message} Showing your last saved overview.` : message);
@@ -50,6 +56,10 @@ export default function Dashboard() {
     prefetch("productData", fetchProducts);
     prefetch("orderData", fetchOrders);
   }, []);
+
+  useEffect(() => {
+    setActivityPage((page) => Math.min(page, activityPageCount));
+  }, [activityPageCount]);
 
   return (
     <AppShell>
@@ -73,15 +83,24 @@ export default function Dashboard() {
         <section className="mt-6 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
           <div className="surface-card overflow-hidden">
             <div className="flex items-center justify-between border-b border-border-light px-5 py-5 sm:px-6">
-              <div><h2 className="display-font text-xl font-bold">Recent activity</h2><p className="mt-1 text-sm text-muted-foreground">Latest movement across your account</p></div><Clock3 size={20} className="text-primary/60" />
+              <div><h2 className="display-font text-xl font-bold">Notifications</h2><p className="mt-1 text-sm text-muted-foreground">Recent views and customer enquiries</p></div><Bell size={20} className="text-primary/60" />
             </div>
             <div className="p-3 sm:p-4">
-              {loading ? <ActivitySkeleton /> : activities.length ? activities.slice(0, 6).map((activity) => (
+              {loading ? <ActivitySkeleton /> : activities.length ? visibleActivities.map((activity) => (
                 <div key={activity.id} className="flex gap-3 rounded-xl px-2 py-3.5 transition hover:bg-muted/60 sm:px-3">
-                  <span className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-primary"><CalendarCheck2 size={17} /></span>
-                  <div className="min-w-0"><p className="text-sm font-semibold leading-5">{activity.type}</p><p className="mt-1 text-xs text-muted-foreground">{activity.time_ago}</p></div>
+                  <span className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-primary">{activity.eventType === "whatsapp_click" ? <MessageCircle size={17} /> : <Eye size={17} />}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-start justify-between gap-2"><p className="text-sm font-semibold leading-5">{activity.title}</p><span className="shrink-0 text-[11px] text-muted-foreground">{activity.timeAgo}</span></div>
+                    {activity.message && <p className="mt-1 text-xs leading-5 text-muted-foreground">{activity.message}</p>}
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold">{activity.inquiryId && <span className="rounded-full bg-muted px-2 py-1 text-muted-foreground">{activity.inquiryId}</span>}{activity.productName && (activity.productUrl ? <a href={activity.productUrl} target="_blank" rel="noopener noreferrer" className="truncate text-primary hover:underline">{activity.productName}</a> : <span className="truncate text-primary">{activity.productName}</span>)}</div>
+                  </div>
                 </div>
               )) : <EmptyActivity />}
+              {!loading && activities.length > ACTIVITY_PAGE_SIZE && <div className="mt-2 flex items-center justify-between border-t border-border-light px-2 pt-4 sm:px-3">
+                <button type="button" onClick={() => setActivityPage((page) => Math.max(1, page - 1))} disabled={activityPage === 1} className="inline-flex h-9 items-center gap-1 rounded-lg border border-border px-3 text-xs font-semibold transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"><ChevronLeft size={15} />Previous</button>
+                <span className="text-xs font-semibold text-muted-foreground">Page {activityPage} of {activityPageCount}</span>
+                <button type="button" onClick={() => setActivityPage((page) => Math.min(activityPageCount, page + 1))} disabled={activityPage === activityPageCount} className="inline-flex h-9 items-center gap-1 rounded-lg border border-border px-3 text-xs font-semibold transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40">Next<ChevronRight size={15} /></button>
+              </div>}
             </div>
           </div>
 
@@ -111,7 +130,8 @@ function MetricCard({ icon, label, value, note, loading, feature = false }: { ic
   </div>;
 }
 
-function ActivitySkeleton() { return <div className="space-y-2">{[1,2,3,4].map((n) => <div key={n} className="flex gap-3 p-3"><div className="h-9 w-9 animate-pulse rounded-full bg-muted"/><div className="flex-1"><div className="h-4 w-2/3 animate-pulse rounded bg-muted"/><div className="mt-2 h-3 w-24 animate-pulse rounded bg-muted"/></div></div>)}</div>; }
-function EmptyActivity() { return <div className="grid min-h-56 place-items-center px-6 text-center"><div><span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-muted text-muted-foreground"><Clock3 size={20}/></span><p className="mt-3 font-semibold">No recent activity</p><p className="mt-1 text-sm text-muted-foreground">New order updates will appear here.</p></div></div>; }
-function normalizeActivity(value: unknown, index: number): RecentActivity | null { if (!value || typeof value !== "object") return null; const item = value as Record<string, unknown>; const type = String(item.type || "").trim(); if (!type) return null; return { id: Number(item.id) || index + 1, type, time_ago: String(item.time_ago || "Recently") }; }
-function normalizeDashboard(value: unknown): { stats: Stats; activities: RecentActivity[] } { const payload = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; return { stats: { totalSales: Number(payload.total_sales) || 0, totalOrders: Number(payload.orders) || 0, categories: Array.isArray(payload.categories) ? payload.categories.filter((item): item is string => typeof item === "string") : [] }, activities: Array.isArray(payload.activity) ? payload.activity.map((item, index) => normalizeActivity(item, index)).filter((item): item is RecentActivity => item !== null) : [] }; }
+function ActivitySkeleton() { return <div className="space-y-2">{[1,2,3].map((n) => <div key={n} className="flex gap-3 p-3"><div className="h-9 w-9 animate-pulse rounded-full bg-muted"/><div className="flex-1"><div className="h-4 w-2/3 animate-pulse rounded bg-muted"/><div className="mt-2 h-3 w-24 animate-pulse rounded bg-muted"/></div></div>)}</div>; }
+function EmptyActivity() { return <div className="grid min-h-56 place-items-center px-6 text-center"><div><span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-muted text-muted-foreground"><Bell size={20}/></span><p className="mt-3 font-semibold">No new notifications</p><p className="mt-1 text-sm text-muted-foreground">Listing views and WhatsApp enquiries will appear here.</p></div></div>; }
+function normalizeActivity(value: unknown, index: number): RecentActivity | null { if (!value || typeof value !== "object") return null; const item = value as Record<string, unknown>; const product = item.product && typeof item.product === "object" ? item.product as Record<string, unknown> : {}; const title = String(item.title || "").trim(); if (!title) return null; return { id: Number(item.id) || index + 1, eventType: String(item.event_type || "listing_view"), title, message: String(item.message || ""), inquiryId: String(item.inquiry_id || ""), productName: String(product.name || ""), productUrl: String(product.url || ""), timeAgo: String(item.time_ago || "Recently") }; }
+function normalizeRecentActivity(value: unknown): RecentActivity[] { const payload = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; return Array.isArray(payload.activity) ? payload.activity.map((item, index) => normalizeActivity(item, index)).filter((item): item is RecentActivity => item !== null) : []; }
+function normalizeDashboard(value: unknown): { stats: Stats } { const payload = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; return { stats: { totalSales: Number(payload.total_sales) || 0, totalOrders: Number(payload.orders) || 0, categories: Array.isArray(payload.categories) ? payload.categories.filter((item): item is string => typeof item === "string") : [] } }; }

@@ -1,6 +1,7 @@
 import { LayoutDashboard, LogOut, Package, ReceiptText, UserRound } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import Logo from "../assets/logo.png";
+import { logoutPartner } from "../api/portal";
 
 const whatsappMessage = encodeURIComponent("Hi Bridal Arcade, I need help with my vendor portal.");
 const whatsappUrl = `https://wa.me/94707997883?text=${whatsappMessage}`;
@@ -17,9 +18,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const name = sessionStorage.getItem("userName") || "Vendor";
   const email = sessionStorage.getItem("userEmail") || "Bridal Arcade partner";
 
-  const logout = () => {
-    localStorage.removeItem("isAuthenticated");
-    sessionStorage.clear();
+  const logout = async () => {
+    await logoutPartner();
     navigate("/");
   };
 
