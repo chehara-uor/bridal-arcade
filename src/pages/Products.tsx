@@ -46,7 +46,7 @@ export default function Products() {
 
   const toggleStatus = async (product: Product) => {
     if (product.is_booked === "1") return;
-    const next = product.status === "Draft" ? "Available" : "Draft";
+    const next: Product["status"] = product.status === "Draft" ? "Available" : "Draft";
     setUpdating(product.id);
     try {
       const result = await sendProductStatus({ product_id: product.id, status: next === "Available" ? "publish" : "draft" });

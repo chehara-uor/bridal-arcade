@@ -16,13 +16,15 @@ export default async function handler(request: any, response: any) {
     });
     const wpUser = result.data?.user;
     if (!result.response.ok || !wpUser?.id || !wpUser?.email) {
-      return sendJson(response, result.response.status === 401 || result.response.status === 403 ? 401 : 502, { message: result.response.status === 401 || result.response.status === 403 ? "That username/email or password is incorrect." : "Unable to authenticate with Bridal Arcade." });
+      const unauthorized = result.response.status === 401 || result.response.status === 403;
+      return sendJson(response, unauthorized ? 401 : result.response.status >= 400 && result.response.status < 500 ? result.response.status : 502, { message: result.data?.message || (unauthorized ? "That username/email or password is incorrect." : "Unable to authenticate with Bridal Arcade.") });
     }
     const user: PortalUser = {
       id: String(wpUser.id),
       email: String(wpUser.email),
       name: String(wpUser.first_name || wpUser.display_name || wpUser.email),
       roles: Array.isArray(wpUser.roles) ? wpUser.roles.map(String) : [],
+      account_type: wpUser.account_type === "business" || wpUser.account_type === "vendor" ? "business" : wpUser.account_type === "individual" ? "individual" : undefined,
     };
     response.setHeader("Set-Cookie", sessionCookie(createSession(user)));
     return sendJson(response, 200, { user });

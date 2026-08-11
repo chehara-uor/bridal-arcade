@@ -6,6 +6,7 @@ export interface PortalUser {
   email: string;
   name: string;
   roles: string[];
+  account_type?: "individual" | "business";
 }
 
 interface SessionPayload extends PortalUser { exp: number }
@@ -59,11 +60,17 @@ export function expiredSessionCookie(): string {
 }
 
 export function wordpressConfig() {
-  const url = process.env.WORDPRESS_API_URL?.replace(/\/$/, "");
+  const url = wordpressUrl();
   const username = process.env.WORDPRESS_API_USERNAME;
   const password = process.env.WORDPRESS_API_PASSWORD;
-  if (!url || !username || !password) throw new Error("WordPress server credentials are not configured.");
+  if (!username || !password) throw new Error("WordPress server credentials are not configured.");
   return { url, authorization: `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}` };
+}
+
+export function wordpressUrl(): string {
+  const url = process.env.WORDPRESS_API_URL?.replace(/\/$/, "");
+  if (!url) throw new Error("WORDPRESS_API_URL is not configured.");
+  return url;
 }
 
 export function sendJson(response: any, status: number, body: unknown) {
@@ -82,8 +89,7 @@ export async function readJson(request: any): Promise<Record<string, unknown>> {
 }
 
 export async function wordpressJson(path: string, init: RequestInit = {}) {
-  const config = wordpressConfig();
-  const response = await fetch(`${config.url}${path}`, { ...init, cache: "no-store", headers: { Accept: "application/json", "Cache-Control": "no-store", ...init.headers } });
+  const response = await fetch(`${wordpressUrl()}${path}`, { ...init, cache: "no-store", headers: { Accept: "application/json", "Cache-Control": "no-store", ...init.headers } });
   const data = await response.json().catch(() => ({ message: "WordPress returned an invalid response." }));
   return { response, data };
 }

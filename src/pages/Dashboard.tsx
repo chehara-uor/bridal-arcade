@@ -66,7 +66,7 @@ export default function Dashboard() {
       <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-7 sm:py-8 xl:px-10">
         <header className="mb-7 flex items-start justify-between gap-4 sm:mb-9">
           <div><p className="eyebrow">Today at a glance</p><h1 className="page-title mt-1.5">Hello, {name}</h1><p className="mt-2 text-sm text-muted-foreground sm:text-base">Here’s how your rental collection is performing.</p></div>
-          <Link to="/my-account" className="hidden h-12 items-center gap-3 rounded-full border border-border bg-white pl-2 pr-4 shadow-sm transition hover:border-primary/25 sm:flex">
+          <Link to="/bride/my-account" className="hidden h-12 items-center gap-3 rounded-full border border-border bg-white pl-2 pr-4 shadow-sm transition hover:border-primary/25 sm:flex">
             <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-sm font-bold text-white">{name.charAt(0).toUpperCase()}</span><span className="text-sm font-semibold">My account</span>
           </Link>
         </header>
@@ -108,7 +108,7 @@ export default function Dashboard() {
             <div className="relative overflow-hidden rounded-2xl bg-[#321a27] p-6 text-white shadow-[0_15px_40px_rgba(50,26,39,.18)]">
               <Sparkles className="absolute -right-3 -top-3 h-28 w-28 text-white/[0.04]" />
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#d5b466]">Quick action</p><h2 className="display-font mt-3 text-2xl font-bold">Keep your collection ready</h2><p className="mt-3 text-sm leading-6 text-white/60">Update availability whenever an item becomes ready to rent again.</p>
-              <Link to="/products" className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-[#321a27] transition hover:bg-[#f7edda]">Manage items <ArrowRight size={17} /></Link>
+              <Link to="/bride/products" className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-[#321a27] transition hover:bg-[#f7edda]">Manage items <ArrowRight size={17} /></Link>
             </div>
             <div className="surface-card p-5 sm:p-6">
               <p className="eyebrow">Your categories</p>

@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
@@ -11,6 +11,11 @@ import MyAccount from "./pages/MyAccount";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 import VendorWidget from "./pages/VendorWidget";
+import RegisterChoice from "./pages/RegisterChoice";
+import BrideRegistration from "./pages/BrideRegistration";
+import VendorRegistration from "./pages/VendorRegistration";
+import VendorDashboard from "./pages/VendorDashboard";
+import VendorPlaceholder from "./pages/VendorPlaceholder";
 
 const queryClient = new QueryClient();
 
@@ -22,26 +27,38 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Auth />} />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
+          <Route path="/register" element={<RegisterChoice />} />
+          <Route path="/register/bride" element={<BrideRegistration />} />
+          <Route path="/register/vendor" element={<VendorRegistration />} />
+          <Route path="/bride/dashboard" element={
+            <ProtectedRoute accountType="individual">
               <Dashboard />
             </ProtectedRoute>
           } />
-          <Route path="/products" element={
-            <ProtectedRoute>
+          <Route path="/bride/products" element={
+            <ProtectedRoute accountType="individual">
               <Products />
             </ProtectedRoute>
           } />
-          <Route path="/orders" element={
-            <ProtectedRoute>
+          <Route path="/bride/orders" element={
+            <ProtectedRoute accountType="individual">
               <Orders />
             </ProtectedRoute>
           } />
-          <Route path="/my-account" element={
-            <ProtectedRoute>
+          <Route path="/bride/my-account" element={
+            <ProtectedRoute accountType="individual">
               <MyAccount />
             </ProtectedRoute>
           } />
+          <Route path="/vendor/dashboard" element={<ProtectedRoute accountType="business"><VendorDashboard /></ProtectedRoute>} />
+          <Route path="/vendor/profile" element={<ProtectedRoute accountType="business"><VendorPlaceholder page="profile" /></ProtectedRoute>} />
+          <Route path="/vendor/products" element={<ProtectedRoute accountType="business"><VendorPlaceholder page="products" /></ProtectedRoute>} />
+          <Route path="/vendor/orders" element={<ProtectedRoute accountType="business"><VendorPlaceholder page="orders" /></ProtectedRoute>} />
+          <Route path="/vendor/account" element={<ProtectedRoute accountType="business"><VendorPlaceholder page="account" /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<Navigate to="/bride/dashboard" replace />} />
+          <Route path="/products" element={<Navigate to="/bride/products" replace />} />
+          <Route path="/orders" element={<Navigate to="/bride/orders" replace />} />
+          <Route path="/my-account" element={<Navigate to="/bride/my-account" replace />} />
           <Route path="/vendor-widget" element={<VendorWidget />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

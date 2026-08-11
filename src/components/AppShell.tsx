@@ -7,10 +7,10 @@ const whatsappMessage = encodeURIComponent("Hi Bridal Arcade, I need help with m
 const whatsappUrl = `https://wa.me/94707997883?text=${whatsappMessage}`;
 
 const items = [
-  { label: "Home", desktopLabel: "Overview", path: "/dashboard", icon: LayoutDashboard },
-  { label: "Items", desktopLabel: "My items", path: "/products", icon: Package },
-  { label: "Orders", desktopLabel: "Orders", path: "/orders", icon: ReceiptText },
-  { label: "Account", desktopLabel: "Account", path: "/my-account", icon: UserRound },
+  { label: "Home", desktopLabel: "Overview", path: "/bride/dashboard", icon: LayoutDashboard },
+  { label: "Items", desktopLabel: "My items", path: "/bride/products", icon: Package },
+  { label: "Orders", desktopLabel: "Orders", path: "/bride/orders", icon: ReceiptText },
+  { label: "Account", desktopLabel: "Account", path: "/bride/my-account", icon: UserRound },
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
