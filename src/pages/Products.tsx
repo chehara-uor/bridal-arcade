@@ -6,7 +6,7 @@ import { sendProductStatus } from "../api/product";
 import { fetchProducts, getRequestErrorMessage, readSessionCache } from "../api/portal";
 
 interface Product { id: number; name: string; price: number; thumbnail: string; is_booked: string; sku: number | string; category: string; status: "Available" | "Draft" | "Rented"; }
-type Filter = "All" | "Available" | "Rented" | "Draft";
+type Filter = "All" | "Available" | "Draft";
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -46,7 +46,7 @@ export default function Products() {
 
   const toggleStatus = async (product: Product) => {
     if (product.is_booked === "1") return;
-    const next = product.status === "Draft" ? "Available" : "Draft";
+    const next: Product["status"] = product.status === "Draft" ? "Available" : "Draft";
     setUpdating(product.id);
     try {
       const result = await sendProductStatus({ product_id: product.id, status: next === "Available" ? "publish" : "draft" });
@@ -60,17 +60,16 @@ export default function Products() {
     finally { setUpdating(null); }
   };
 
-  const filters: Filter[] = ["All", "Available", "Rented", "Draft"];
+  const filters: Filter[] = ["All", "Available", "Draft"];
 
   return (
     <AppShell>
       <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-7 sm:py-8 xl:px-10">
         <header><p className="eyebrow">Your collection</p><h1 className="page-title mt-1.5">My items</h1><p className="mt-2 text-sm text-muted-foreground sm:text-base">Control which rental items customers can discover.</p></header>
 
-        <section className="mt-7 grid grid-cols-3 gap-3 sm:max-w-2xl">
+        <section className="mt-7 grid grid-cols-2 gap-3 sm:max-w-lg">
           <MiniStat label="All items" value={products.length} />
           <MiniStat label="Available" value={products.filter((p) => effectiveStatus(p) === "Available").length} tone="success" />
-          <MiniStat label="Rented" value={products.filter((p) => effectiveStatus(p) === "Rented").length} tone="gold" />
         </section>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

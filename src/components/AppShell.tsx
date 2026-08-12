@@ -1,4 +1,4 @@
-import { LayoutDashboard, LogOut, Package, ReceiptText, UserRound } from "lucide-react";
+import { LayoutDashboard, LogOut, Package, PlusCircle, UserRound } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import Logo from "../assets/logo.png";
 import { logoutPartner } from "../api/portal";
@@ -7,10 +7,10 @@ const whatsappMessage = encodeURIComponent("Hi Bridal Arcade, I need help with m
 const whatsappUrl = `https://wa.me/94707997883?text=${whatsappMessage}`;
 
 const items = [
-  { label: "Home", desktopLabel: "Overview", path: "/dashboard", icon: LayoutDashboard },
-  { label: "Items", desktopLabel: "My items", path: "/products", icon: Package },
-  { label: "Orders", desktopLabel: "Orders", path: "/orders", icon: ReceiptText },
-  { label: "Account", desktopLabel: "Account", path: "/my-account", icon: UserRound },
+  { label: "Home", desktopLabel: "Overview", path: "/bride/dashboard", icon: LayoutDashboard },
+  { label: "Items", desktopLabel: "My items", path: "/bride/products", icon: Package },
+  { label: "Add", desktopLabel: "Add product", path: "/bride/products/new", icon: PlusCircle },
+  { label: "Account", desktopLabel: "Account", path: "/bride/my-account", icon: UserRound },
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -38,7 +38,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         <nav className="mt-10 space-y-1.5" aria-label="Primary navigation">
           {items.map(({ desktopLabel, path, icon: Icon }) => (
-            <NavLink key={path} to={path} className={({ isActive }) => `flex min-h-12 items-center gap-3 rounded-xl px-3.5 text-sm font-semibold transition ${isActive ? "bg-white text-[#3a1b2b] shadow-lg" : "text-white/65 hover:bg-white/8 hover:text-white"}`}>
+            <NavLink end key={path} to={path} className={({ isActive }) => `flex min-h-12 items-center gap-3 rounded-xl px-3.5 text-sm font-semibold transition ${isActive ? "bg-white text-[#3a1b2b] shadow-lg" : "text-white/65 hover:bg-white/8 hover:text-white"}`}>
               <Icon size={19} strokeWidth={2} />
               {desktopLabel}
             </NavLink>
@@ -73,7 +73,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border-light bg-white/95 px-2 pb-[max(0.45rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_30px_rgba(55,28,40,0.08)] backdrop-blur-xl lg:hidden" aria-label="Mobile navigation">
         <div className="mx-auto flex max-w-md items-center justify-around">
           {items.map(({ label, path, icon: Icon }) => (
-            <NavLink key={path} to={path} className={({ isActive }) => `flex min-h-[56px] min-w-[64px] flex-col items-center justify-center gap-1 rounded-xl px-3 text-[11px] font-semibold transition ${isActive ? "bg-primary/8 text-primary" : "text-muted-foreground"}`}>
+            <NavLink end key={path} to={path} className={({ isActive }) => `flex min-h-[56px] min-w-[64px] flex-col items-center justify-center gap-1 rounded-xl px-3 text-[11px] font-semibold transition ${isActive ? "bg-primary/8 text-primary" : "text-muted-foreground"}`}>
               <Icon size={21} strokeWidth={2.1} />
               {label}
             </NavLink>

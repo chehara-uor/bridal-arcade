@@ -9,7 +9,9 @@ export default async function handler(request: any, response: any) {
     const status = String(body.status || "");
     if (!Number.isInteger(productId) || productId <= 0 || !["publish", "draft"].includes(status)) return sendJson(response, 400, { message: "Invalid product update." });
     const { authorization } = wordpressConfig();
-    const result = await wordpressJson("/wp-json/bridal/v1/update-product-status/", { method: "POST", headers: { Authorization: authorization, "Content-Type": "application/json" }, body: JSON.stringify({ product_id: productId, status }) });
-    return sendJson(response, result.response.ok ? 200 : result.response.status, result.data);
+    const result = await wordpressJson("/wp-json/bridal/v2/update-product-status", { method: "POST", headers: { Authorization: authorization, "Content-Type": "application/json" }, body: JSON.stringify({ product_id: productId, status }) });
+    if (!result.response.ok) return sendJson(response, result.response.status, { message: result.data?.message || "Unable to update this product." });
+    const data = result.data && typeof result.data === "object" ? result.data : {};
+    return sendJson(response, 200, { ...data, success: true });
   } catch { return sendJson(response, 502, { message: "Unable to update this product." }); }
 }

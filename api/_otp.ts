@@ -1,0 +1,8 @@
+import { createHmac, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
+interface OtpChallenge { email:string; phone:string; nonce:string; otpMac:string; exp:number; }
+function secret(){const value=process.env.AUTH_SECRET;if(!value||value.length<32)throw new Error("AUTH_SECRET must contain at least 32 characters.");return value;}
+function sign(value:string){return createHmac("sha256",secret()).update(value).digest("base64url");}
+function safeEqual(first:string,second:string){const a=Buffer.from(first),b=Buffer.from(second);return a.length===b.length&&timingSafeEqual(a,b);}
+export function normalizeSriLankanMobile(value:string){const compact=value.replace(/[\s()-]/g,"");if(/^07\d{8}$/.test(compact))return `+94${compact.slice(1)}`;if(/^947\d{8}$/.test(compact))return `+${compact}`;if(/^\+947\d{8}$/.test(compact))return compact;return null;}
+export function createOtpChallenge(email:string,phone:string){const otp=String(randomInt(100000,1000000));const payload:OtpChallenge={email,phone,nonce:randomUUID(),otpMac:"",exp:Math.floor(Date.now()/1000)+300};payload.otpMac=sign(`${payload.nonce}|${email}|${phone}|${otp}`);const encoded=Buffer.from(JSON.stringify(payload)).toString("base64url");return{otp,challenge:`${encoded}.${sign(encoded)}`};}
+export function verifyOtpChallenge(token:string,otp:string,email:string,phone:string){const[encoded,supplied]=token.split(".");if(!encoded||!supplied||!safeEqual(sign(encoded),supplied))return false;try{const payload=JSON.parse(Buffer.from(encoded,"base64url").toString("utf8"))as OtpChallenge;if(payload.exp<Math.floor(Date.now()/1000)||payload.email!==email||payload.phone!==phone)return false;return safeEqual(payload.otpMac,sign(`${payload.nonce}|${email}|${phone}|${otp}`));}catch{return false;}}

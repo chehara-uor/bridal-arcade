@@ -1,0 +1,5 @@
+import { ArrowLeft, Clock3, Store } from "lucide-react";
+import { Link } from "react-router-dom";
+import Logo from "../assets/logo.png";
+
+export default function VendorRegistration(){return <main className="grid min-h-screen place-items-center bg-[#fbf8f4] px-5 py-10"><section className="surface-card w-full max-w-lg p-7 text-center sm:p-10"><img src={Logo} alt="Bridal Arcade" className="mx-auto h-14 w-14 rounded-2xl bg-white p-1 shadow"/><span className="mx-auto mt-7 grid h-16 w-16 place-items-center rounded-2xl bg-accent text-primary"><Store size={29}/></span><p className="eyebrow mt-6">Vendor shops</p><h1 className="display-font mt-2 text-3xl font-bold">Coming soon</h1><p className="mt-3 text-sm leading-6 text-muted-foreground">Shop account registration is temporarily unavailable while we prepare the vendor experience.</p><div className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-muted/60 p-3 text-xs font-semibold text-muted-foreground"><Clock3 size={16}/>Please check back soon.</div><Link to="/register" className="secondary-button mt-6 w-full"><ArrowLeft size={17}/>Back to account types</Link></section></main>;}
