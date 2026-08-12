@@ -58,9 +58,7 @@ export async function fetchRecentActivity() {
   return (await client.get("/recent-activity")).data;
 }
 
-// These remain compatibility calls until their corresponding server routes are enabled.
-export async function fetchProducts(email: string) {
-  if (!email) throw new Error("Your session is missing an email address. Please sign in again.");
+export async function fetchProducts(_email?: string) {
   const response = await client.get("/products");
   if (!Array.isArray(response.data)) throw new Error("The server returned an invalid product list.");
   return response.data;
