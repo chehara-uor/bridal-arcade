@@ -15,6 +15,7 @@ import BrideRegistration from "./pages/BrideRegistration";
 import VendorRegistration from "./pages/VendorRegistration";
 import VendorDashboard from "./pages/VendorDashboard";
 import VendorPlaceholder from "./pages/VendorPlaceholder";
+import AddProduct from "./pages/AddProduct";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
               <Products />
             </ProtectedRoute>
           } />
+          <Route path="/bride/products/new" element={<ProtectedRoute accountType="individual"><AddProduct /></ProtectedRoute>} />
           <Route path="/bride/orders" element={<Navigate to="/bride/dashboard" replace />} />
           <Route path="/bride/my-account" element={
             <ProtectedRoute accountType="individual">

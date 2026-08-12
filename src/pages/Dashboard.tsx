@@ -1,16 +1,14 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, Bell, ChevronLeft, ChevronRight, CircleDollarSign, Clock3, Eye, MessageCircle, Package, ReceiptText, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowRight, Bell, ChevronLeft, ChevronRight, Eye, MessageCircle, Package, Plus, Sparkles, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppShell from "../components/AppShell";
-import { fetchDashboard, fetchProducts, fetchRecentActivity, getRequestErrorMessage, readSessionCache } from "../api/portal";
+import { fetchProducts, fetchRecentActivity, getRequestErrorMessage, readSessionCache } from "../api/portal";
 
 interface RecentActivity { id: number; eventType: string; title: string; message: string; inquiryId: string; productName: string; productUrl: string; timeAgo: string; }
-interface Stats { totalSales: number; totalOrders: number; categories: string[]; }
 const ACTIVITY_PAGE_SIZE = 3;
 
 export default function Dashboard() {
   const [activities, setActivities] = useState<RecentActivity[]>([]);
-  const [stats, setStats] = useState<Stats>({ totalSales: 0, totalOrders: 0, categories: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activityPage, setActivityPage] = useState(1);
@@ -20,25 +18,15 @@ export default function Dashboard() {
 
   const loadDashboard = async () => {
     setLoading(true); setError("");
-    const cached = readSessionCache<Record<string, unknown>>("dashboardData");
     const cachedActivity = readSessionCache<Record<string, unknown>>("recentActivityData");
-    const validCache = cached && typeof cached === "object" && !Array.isArray(cached) ? cached : null;
-    if (validCache) {
-      const cachedView = normalizeDashboard(validCache);
-      setStats(cachedView.stats);
-      setLoading(false);
-    }
     if (cachedActivity) setActivities(normalizeRecentActivity(cachedActivity));
     try {
-      const [data, activityData] = await Promise.all([fetchDashboard(), fetchRecentActivity()]);
-      sessionStorage.setItem("dashboardData", JSON.stringify(data));
+      const activityData = await fetchRecentActivity();
       sessionStorage.setItem("recentActivityData", JSON.stringify(activityData));
-      const view = normalizeDashboard(data);
-      setStats(view.stats);
       setActivities(normalizeRecentActivity(activityData));
     } catch (requestError) {
       const message = getRequestErrorMessage(requestError, "We couldn't load your overview. Please try again.");
-      setError(validCache ? `${message} Showing your last saved overview.` : message);
+      setError(cachedActivity ? `${message} Showing your last saved notifications.` : message);
     }
     finally { setLoading(false); }
   };
@@ -63,19 +51,17 @@ export default function Dashboard() {
   return (
     <AppShell>
       <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-7 sm:py-8 xl:px-10">
-        <header className="mb-7 flex items-start justify-between gap-4 sm:mb-9">
+        <header className="mb-7 flex flex-wrap items-start justify-between gap-4 sm:mb-9">
           <div><p className="eyebrow">Today at a glance</p><h1 className="page-title mt-1.5">Hello, {name}</h1><p className="mt-2 text-sm text-muted-foreground sm:text-base">Here’s how your rental collection is performing.</p></div>
-          <Link to="/bride/my-account" className="hidden h-12 items-center gap-3 rounded-full border border-border bg-white pl-2 pr-4 shadow-sm transition hover:border-primary/25 sm:flex">
+          <div className="flex items-center gap-2"><Link to="/bride/products/new" className="primary-button"><Plus size={17}/>Add product</Link><Link to="/bride/my-account" className="hidden h-12 items-center gap-3 rounded-full border border-border bg-white pl-2 pr-4 shadow-sm transition hover:border-primary/25 sm:flex">
             <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-sm font-bold text-white">{name.charAt(0).toUpperCase()}</span><span className="text-sm font-semibold">My account</span>
-          </Link>
+          </Link></div>
         </header>
 
         {error && <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-destructive/15 bg-destructive/5 p-4 text-sm"><span>{error}</span><button onClick={loadDashboard} className="font-bold text-destructive">Retry</button></div>}
 
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard icon={<CircleDollarSign />} label="Total earnings" value={`LKR ${stats.totalSales.toLocaleString()}`} note="Your rental profit" loading={loading} feature />
-          <MetricCard icon={<ReceiptText />} label="Total orders" value={String(stats.totalOrders)} note="Across all statuses" loading={loading} />
-          <MetricCard icon={<Package />} label="Categories" value={String(stats.categories.length)} note="In your collection" loading={loading} />
+        <section className="grid gap-4 sm:grid-cols-2">
+          <MetricCard icon={<Package />} label="My collection" value="View items" note="Manage your bridal wear" loading={false} feature />
           <MetricCard icon={<TrendingUp />} label="Portal status" value="Active" note="Your store is connected" loading={loading} />
         </section>
 
@@ -111,7 +97,7 @@ export default function Dashboard() {
             </div>
             <div className="surface-card p-5 sm:p-6">
               <p className="eyebrow">Your categories</p>
-              <div className="mt-4 flex flex-wrap gap-2">{loading ? <span className="h-8 w-28 animate-pulse rounded-full bg-muted" /> : stats.categories.length ? stats.categories.map((category) => <span key={category} className="rounded-full border border-primary/10 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary">{category}</span>) : <p className="text-sm text-muted-foreground">No categories to show yet.</p>}</div>
+              <div className="mt-4"><Link to="/bride/products" className="secondary-button w-full">View my items <ArrowRight size={17}/></Link></div>
             </div>
           </div>
         </section>
@@ -133,4 +119,3 @@ function ActivitySkeleton() { return <div className="space-y-2">{[1,2,3].map((n)
 function EmptyActivity() { return <div className="grid min-h-56 place-items-center px-6 text-center"><div><span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-muted text-muted-foreground"><Bell size={20}/></span><p className="mt-3 font-semibold">No new notifications</p><p className="mt-1 text-sm text-muted-foreground">Listing views and WhatsApp enquiries will appear here.</p></div></div>; }
 function normalizeActivity(value: unknown, index: number): RecentActivity | null { if (!value || typeof value !== "object") return null; const item = value as Record<string, unknown>; const product = item.product && typeof item.product === "object" ? item.product as Record<string, unknown> : {}; const title = String(item.title || "").trim(); if (!title) return null; return { id: Number(item.id) || index + 1, eventType: String(item.event_type || "listing_view"), title, message: String(item.message || ""), inquiryId: String(item.inquiry_id || ""), productName: String(product.name || ""), productUrl: String(product.url || ""), timeAgo: String(item.time_ago || "Recently") }; }
 function normalizeRecentActivity(value: unknown): RecentActivity[] { const payload = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; return Array.isArray(payload.activity) ? payload.activity.map((item, index) => normalizeActivity(item, index)).filter((item): item is RecentActivity => item !== null) : []; }
-function normalizeDashboard(value: unknown): { stats: Stats } { const payload = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; return { stats: { totalSales: Number(payload.total_sales) || 0, totalOrders: Number(payload.orders) || 0, categories: Array.isArray(payload.categories) ? payload.categories.filter((item): item is string => typeof item === "string") : [] } }; }

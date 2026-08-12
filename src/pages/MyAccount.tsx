@@ -53,7 +53,7 @@ export default function MyAccount() {
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-accent text-primary"><CircleHelp size={21} /></span>
               <h2 className="display-font mt-4 text-xl font-bold">Need help?</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">Our team can help with your account, listings, or rental orders.</p>
-              <a href="mailto:info@bridalarcade.lk" className="secondary-button mt-5 w-full"><Mail size={17} />Contact support</a>
+              <a href="mailto:hello@bridalarcade.lk" className="secondary-button mt-5 w-full"><Mail size={17} />Contact support</a>
             </section>
 
             <button type="button" onClick={logout} className="secondary-button w-full text-destructive hover:border-destructive/25 hover:bg-destructive/5 lg:hidden"><LogOut size={17} />Sign out</button>
