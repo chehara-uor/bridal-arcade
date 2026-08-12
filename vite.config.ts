@@ -8,6 +8,8 @@ const localApiRoutes: Record<string, string> = {
   "/api/dashboard": "/api/dashboard.ts", "/api/recent-activity": "/api/recent-activity.ts",
   "/api/products": "/api/products.ts", "/api/orders": "/api/orders.ts",
   "/api/product-status": "/api/product-status.ts", "/api/register": "/api/register.ts",
+  "/api/vendor-product": "/api/vendor-product.ts",
+  "/api/vendor-otp-send": "/api/vendor-otp-send.ts", "/api/widget-register": "/api/widget-register.ts",
 };
 
 function localServerApi(): Plugin {
@@ -24,7 +26,7 @@ function localServerApi(): Plugin {
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const serverEnv = loadEnv(mode, process.cwd(), "");
-  for (const key of ["WORDPRESS_API_URL", "WORDPRESS_API_USERNAME", "WORDPRESS_API_PASSWORD", "AUTH_SECRET"]) if (serverEnv[key]) process.env[key] = serverEnv[key];
+  for (const key of ["WORDPRESS_API_URL", "WORDPRESS_API_USERNAME", "WORDPRESS_API_PASSWORD", "AUTH_SECRET", "SMS_USER_ID", "SMS_API_KEY", "SMS_API_BASE_URL", "SMS_SENDER_ID"]) if (serverEnv[key]) process.env[key] = serverEnv[key];
   return ({
   server: {
     host: "127.0.0.1",
