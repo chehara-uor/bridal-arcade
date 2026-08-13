@@ -228,8 +228,7 @@ export default function AddProduct() {
       form.set("owner_commission", "20");
       form.set("chest_size", product.chestSize);
       form.set("wear_count", product.wearCount);
-      form.set("lead_time_days", "1");
-      form.set("in_store_now", "true");
+      form.set("availability_type", availabilityType(product.action));
       form.set("main_image", preparedImages[0]);
       form.append("gallery_images[]", preparedImages[1]);
       form.append("gallery_images[]", preparedImages[2]);
@@ -957,6 +956,12 @@ function escapeHtml(value: string) {
         "'": "&#039;",
       })[character] || character,
   );
+}
+
+function availabilityType(action: Action): "rent" | "sale" | "both" {
+  if (action === "Rent Only") return "rent";
+  if (action === "Sell Only") return "sale";
+  return "both";
 }
 
 async function createCroppedFile(image: CropImage): Promise<File> {
