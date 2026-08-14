@@ -1,19 +1,28 @@
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import fs from "fs";
 import { componentTagger } from "lovable-tagger";
 
-const localApiRoutes: Record<string, string> = {
-  "/api/login": "/api/login.ts", "/api/session": "/api/session.ts", "/api/logout": "/api/logout.ts",
-  "/api/dashboard": "/api/dashboard.ts", "/api/recent-activity": "/api/recent-activity.ts",
-  "/api/products": "/api/products.ts", "/api/orders": "/api/orders.ts",
-  "/api/product-status": "/api/product-status.ts", "/api/register": "/api/register.ts",
-  "/api/vendor-product": "/api/vendor-product.ts",
-  "/api/vendor-otp-send": "/api/vendor-otp-send.ts", "/api/widget-register": "/api/widget-register.ts",
-};
+// Every non-underscore-prefixed file in api/ is a Vercel-style serverless handler
+// (`(req, res) => ...`, default export). Vite's dev server doesn't know how to run
+// those on its own, so this middleware shims the same routing Vercel does in prod.
+// The route table is derived from the filesystem (not hand-maintained) so a new
+// api/foo.ts is picked up automatically instead of silently 404ing only in local dev.
+function discoverLocalApiRoutes(): Record<string, string> {
+  const apiDir = path.resolve(__dirname, "api");
+  const routes: Record<string, string> = {};
+  for (const entry of fs.readdirSync(apiDir)) {
+    if (!entry.endsWith(".ts") || entry.startsWith("_")) continue;
+    const name = entry.slice(0, -3);
+    routes[`/api/${name}`] = `/api/${entry}`;
+  }
+  return routes;
+}
 
 function localServerApi(): Plugin {
   return { name: "bridal-arcade-local-api", apply: "serve", configureServer(server) {
+    const localApiRoutes = discoverLocalApiRoutes();
     server.middlewares.use(async (request, response, next) => {
       const modulePath = localApiRoutes[new URL(request.url || "/", "http://localhost").pathname];
       if (!modulePath) return next();

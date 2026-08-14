@@ -1,48 +1,64 @@
 import axios from "axios";
-import { clearMockVendorUser, getMockVendorUser, getStoredAccountType, setStoredAccountType, type AccountType } from "../auth/account";
+import { clearMockVendorUser, getStoredAccountType, setStoredAccountType, type AccountType } from "../auth/account";
+import { apiClient as client, clearAuthToken, getAuthToken, setAuthToken } from "./client";
 
 export interface PortalUser {
   id: string;
   email: string;
   name: string;
   roles: string[];
+  role?: string;
   account_type?: AccountType;
+  profile_status?: "active" | "inactive";
 }
-
-const client = axios.create({ baseURL: "/api", withCredentials: true, headers: { Accept: "application/json" } });
 
 export async function loginPartner(usernameOrEmail: string, password: string): Promise<PortalUser> {
   const response = await client.post("/login", { username_or_email: usernameOrEmail, password });
   if (!response.data?.user?.id || !response.data?.user?.email) throw new Error("The server returned an incomplete login response.");
+  if (!response.data?.token) throw new Error("The server returned an incomplete authentication response.");
+  setAuthToken(String(response.data.token));
   return response.data.user as PortalUser;
 }
 
 export async function getSession(): Promise<PortalUser> {
-  const mockUser = getMockVendorUser();
-  if (mockUser) return mockUser;
-  const response = await client.get("/session");
-  return response.data.user as PortalUser;
+  if (!getAuthToken()) throw new Error("Not logged in.");
+  try {
+    const response = await client.get("/session");
+    if (!response.data?.token || !response.data?.user) throw new Error("The server returned an incomplete session response.");
+    setAuthToken(String(response.data.token));
+    return response.data.user as PortalUser;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) clearAuthToken();
+    throw error;
+  }
 }
 
 export async function logoutPartner(): Promise<void> {
-  try { await client.post("/logout"); } finally {
+  try {
+    clearAuthToken();
     localStorage.removeItem("isAuthenticated");
     localStorage.removeItem("accountType");
     localStorage.removeItem("vendorUserID");
     localStorage.removeItem("userID");
     sessionStorage.clear();
-  }
+  } finally { clearAuthToken(); }
 }
+
+export function hasAuthToken(): boolean { return Boolean(getAuthToken()); }
 
 export function storeUser(user: PortalUser, accountType?: AccountType) {
   sessionStorage.setItem("userID", user.id);
   sessionStorage.setItem("userName", user.name || "Partner");
   sessionStorage.setItem("userEmail", user.email);
+  sessionStorage.setItem("userRoles", JSON.stringify(user.roles || []));
+  sessionStorage.setItem("userRole", user.role || user.roles?.[0] || "");
+  sessionStorage.setItem("profileStatus", user.profile_status || "active");
   setStoredAccountType(accountType || user.account_type || getStoredAccountType());
   localStorage.setItem("isAuthenticated", "true");
 }
 
 export function prepareForRealLogin() {
+  clearAuthToken();
   clearMockVendorUser();
   sessionStorage.clear();
   localStorage.removeItem("accountType");
@@ -51,22 +67,22 @@ export function prepareForRealLogin() {
 }
 
 export async function fetchDashboard() {
-  return (await client.get("/dashboard")).data;
+  return (await client.get("/dashboard", { params: { email: sessionStorage.getItem("userEmail") || "" } })).data;
 }
 
 export async function fetchRecentActivity() {
-  return (await client.get("/recent-activity")).data;
+  return (await client.get("/recent-activity", { params: { email: sessionStorage.getItem("userEmail") || "" } })).data;
 }
 
-export async function fetchProducts(_email?: string) {
-  const response = await client.get("/products");
+export async function fetchProducts(email?: string) {
+  const response = await client.get("/products", { params: { email: email || sessionStorage.getItem("userEmail") || "" } });
   if (!Array.isArray(response.data)) throw new Error("The server returned an invalid product list.");
   return response.data;
 }
 
 export async function fetchOrders(email: string) {
   if (!email) throw new Error("Your session is missing an email address. Please sign in again.");
-  const response = await client.get("/orders");
+  const response = await client.get("/orders", { params: { email } });
   if (!Array.isArray(response.data)) throw new Error("The server returned an invalid order list.");
   return response.data;
 }

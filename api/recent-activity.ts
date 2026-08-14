@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { readSession, sendJson, wordpressConfig, wordpressJson } from "./_session.js";
+import { requireBearer, sendJson, wordpressJson } from "./_session.js";
 
 export default async function handler(request: any, response: any) {
   if (request.method !== "GET") return sendJson(response, 405, { message: "Method not allowed." });
-  const session = readSession(request);
-  if (!session) return sendJson(response, 401, { message: "Your session has expired." });
+  const authorization = requireBearer(request, response);
+  if (!authorization) return;
 
   try {
-    const { authorization } = wordpressConfig();
-    const query = new URLSearchParams({ owner_email: session.email, limit: "20" });
+    const email = new URL(request.url || "/", "http://localhost").searchParams.get("email") || "";
+    const query = new URLSearchParams({ owner_email: email, limit: "20" });
     const result = await wordpressJson(`/wp-json/lead-tracker/v1/recent-activity?${query}`, {
       headers: { Authorization: authorization },
     });

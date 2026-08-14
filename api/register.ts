@@ -35,7 +35,11 @@ export default async function handler(request: any, response: any) {
         first_name: String(wpUser.first_name || firstName),
         account_type: wpUser.account_type === "business" ? "business" : "individual",
         roles: Array.isArray(wpUser.roles) ? wpUser.roles.map(String) : [],
+        role: typeof wpUser.role === "string" ? wpUser.role : undefined,
+        profile_status: wpUser.profile_status === "inactive" ? "inactive" : "active",
       },
+      token: result.data?.token,
+      expires_at: result.data?.expires_at,
     });
   } catch {
     return sendJson(response, 502, { message: "Unable to connect to Bridal Arcade registration." });

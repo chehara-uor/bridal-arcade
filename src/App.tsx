@@ -16,6 +16,10 @@ import VendorRegistration from "./pages/VendorRegistration";
 import VendorDashboard from "./pages/VendorDashboard";
 import VendorPlaceholder from "./pages/VendorPlaceholder";
 import AddProduct from "./pages/AddProduct";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsers from "./pages/AdminUsers";
+import AdminUserDetail from "./pages/AdminUserDetail";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +56,9 @@ const App = () => (
           <Route path="/vendor/products" element={<ProtectedRoute accountType="business"><VendorPlaceholder page="products" /></ProtectedRoute>} />
           <Route path="/vendor/orders" element={<ProtectedRoute accountType="business"><VendorPlaceholder page="orders" /></ProtectedRoute>} />
           <Route path="/vendor/account" element={<ProtectedRoute accountType="business"><VendorPlaceholder page="account" /></ProtectedRoute>} />
+          <Route path="/admin/dashboard" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
+          <Route path="/admin/users" element={<AdminProtectedRoute><AdminUsers /></AdminProtectedRoute>} />
+          <Route path="/admin/users/:email" element={<AdminProtectedRoute><AdminUserDetail /></AdminProtectedRoute>} />
           <Route path="/dashboard" element={<Navigate to="/bride/dashboard" replace />} />
           <Route path="/products" element={<Navigate to="/bride/products" replace />} />
           <Route path="/orders" element={<Navigate to="/bride/dashboard" replace />} />

@@ -3,8 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, Heart, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import Logo from "../assets/logo.png";
-import { getRequestErrorMessage, getSession, loginPartner, prepareForRealLogin, storeUser } from "../api/portal";
-import { dashboardFor, normalizeAccountType } from "../auth/account";
+import { getRequestErrorMessage, getSession, hasAuthToken, loginPartner, prepareForRealLogin, storeUser } from "../api/portal";
+import { landingPageFor, normalizeAccountType } from "../auth/account";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function Auth() {
@@ -16,10 +16,11 @@ export default function Auth() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!hasAuthToken()) { setCheckingSession(false); return; }
     getSession().then((user) => {
       const accountType = normalizeAccountType(user.account_type || sessionStorage.getItem("accountType"));
       storeUser(user, accountType);
-      navigate(dashboardFor(accountType), { replace: true });
+      navigate(landingPageFor(user), { replace: true });
     }).catch(() => {
       localStorage.removeItem("isAuthenticated");
       sessionStorage.clear();
@@ -41,7 +42,7 @@ export default function Auth() {
       const user = await loginPartner(formData.email.trim(), formData.password);
       const accountType = normalizeAccountType(user.account_type);
       storeUser(user, accountType);
-      navigate(dashboardFor(accountType));
+      navigate(landingPageFor(user));
     } catch (error) {
       const message = getRequestErrorMessage(error, "We couldn't sign you in. Check your details and try again.");
       toast.error(message);
