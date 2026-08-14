@@ -1,7 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { readJson, sendJson, wordpressJson, type PortalUser } from "./_session.js";
+// Consolidated to stay under Vercel's Hobby-plan Serverless Function count:
+// GET  /api/auth/session -> refresh session (was api/session.ts)
+// POST /api/auth/login   -> sign in         (was api/login.ts)
+import { readJson, requireBearer, sendJson, wordpressJson, type PortalUser } from "../../lib/session.js";
 
 export default async function handler(request: any, response: any) {
+  const action = new URL(request.url || "/", "http://localhost").pathname.split("/").pop();
+  if (action === "login") return login(request, response);
+  if (action === "session") return session(request, response);
+  return sendJson(response, 404, { message: "Not found." });
+}
+
+async function login(request: any, response: any) {
   if (request.method !== "POST") return sendJson(response, 405, { message: "Method not allowed." });
   try {
     const body = await readJson(request);
@@ -35,4 +45,16 @@ export default async function handler(request: any, response: any) {
   } catch {
     return sendJson(response, 500, { message: "Sign-in is temporarily unavailable." });
   }
+}
+
+async function session(request: any, response: any) {
+  if (request.method !== "GET") return sendJson(response, 405, { message: "Method not allowed." });
+  const authorization = requireBearer(request, response);
+  if (!authorization) return;
+  try {
+    const result = await wordpressJson("/wp-json/bridal/v2/session", { headers: { Authorization: authorization } });
+    if (!result.response.ok) return sendJson(response, result.response.status === 401 ? 401 : result.response.status, { message: result.data?.message || "Unable to refresh your session." });
+    if (!result.data?.user || !result.data?.token) return sendJson(response, 502, { message: "WordPress returned an incomplete session response." });
+    return sendJson(response, 200, { user: result.data.user, token: result.data.token, expires_at: result.data.expires_at });
+  } catch { return sendJson(response, 502, { message: "Unable to refresh your session." }); }
 }

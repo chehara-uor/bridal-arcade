@@ -33,7 +33,7 @@ const toUser = (value: Record<string, unknown>): AdminUser => ({
 });
 
 export async function fetchAdminUsers(filters: UserFilters): Promise<UsersResult> {
-  const response = await adminClient.get("/admin-users", { params: { ...filters, ...requester() } });
+  const response = await adminClient.get("/admin/users", { params: { ...filters, ...requester() } });
   const body = response.data ?? {};
   const rawUsers = Array.isArray(body) ? body : body.users ?? body.data ?? [];
   const pagination = body.pagination ?? body.meta ?? body;
@@ -49,7 +49,7 @@ export async function fetchAdminUsers(filters: UserFilters): Promise<UsersResult
 }
 
 export async function updateAdminUserStatus(user: Pick<AdminUser, "id" | "email">, status: "active" | "inactive") {
-  return (await adminClient.post("/admin-user-status", { ...requester(), target_user_id: user.id || undefined, target_email: user.id ? undefined : user.email, status })).data;
+  return (await adminClient.post("/admin/user-status", { ...requester(), target_user_id: user.id || undefined, target_email: user.id ? undefined : user.email, status })).data;
 }
 
 export interface AdminProduct {
@@ -62,7 +62,7 @@ export interface AdminProduct {
 }
 
 export async function fetchAdminUserProducts(email: string): Promise<AdminProduct[]> {
-  const response = await adminClient.get("/admin-user-products", { params: { email, ...requester() } });
+  const response = await adminClient.get("/admin/user-products", { params: { email, ...requester() } });
   return response.data.map((item: Record<string, unknown>) => ({
     id: Number(item.id ?? item.product_id),
     title: String(item.title ?? item.name ?? "Untitled product"),
@@ -74,5 +74,5 @@ export async function fetchAdminUserProducts(email: string): Promise<AdminProduc
 }
 
 export async function updateAdminProductStatus(productId: number, status: "publish" | "draft" | "trash") {
-  return (await adminClient.post("/admin-product-status", { ...requester(), product_id: productId, status })).data;
+  return (await adminClient.post("/admin/product-status", { ...requester(), product_id: productId, status })).data;
 }

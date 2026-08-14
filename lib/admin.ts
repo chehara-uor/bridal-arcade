@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { requireBearer, sendJson } from "./_session.js";
+import { requireBearer, sendJson } from "./session.js";
 
 export function requireAdministrator(request: any, response: any): { headers: Record<string, string> } | null {
   const authorization = requireBearer(request, response);

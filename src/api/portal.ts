@@ -13,7 +13,7 @@ export interface PortalUser {
 }
 
 export async function loginPartner(usernameOrEmail: string, password: string): Promise<PortalUser> {
-  const response = await client.post("/login", { username_or_email: usernameOrEmail, password });
+  const response = await client.post("/auth/login", { username_or_email: usernameOrEmail, password });
   if (!response.data?.user?.id || !response.data?.user?.email) throw new Error("The server returned an incomplete login response.");
   if (!response.data?.token) throw new Error("The server returned an incomplete authentication response.");
   setAuthToken(String(response.data.token));
@@ -23,7 +23,7 @@ export async function loginPartner(usernameOrEmail: string, password: string): P
 export async function getSession(): Promise<PortalUser> {
   if (!getAuthToken()) throw new Error("Not logged in.");
   try {
-    const response = await client.get("/session");
+    const response = await client.get("/auth/session");
     if (!response.data?.token || !response.data?.user) throw new Error("The server returned an incomplete session response.");
     setAuthToken(String(response.data.token));
     return response.data.user as PortalUser;
@@ -67,22 +67,22 @@ export function prepareForRealLogin() {
 }
 
 export async function fetchDashboard() {
-  return (await client.get("/dashboard", { params: { email: sessionStorage.getItem("userEmail") || "" } })).data;
+  return (await client.get("/portal/dashboard", { params: { email: sessionStorage.getItem("userEmail") || "" } })).data;
 }
 
 export async function fetchRecentActivity() {
-  return (await client.get("/recent-activity", { params: { email: sessionStorage.getItem("userEmail") || "" } })).data;
+  return (await client.get("/portal/recent-activity", { params: { email: sessionStorage.getItem("userEmail") || "" } })).data;
 }
 
 export async function fetchProducts(email?: string) {
-  const response = await client.get("/products", { params: { email: email || sessionStorage.getItem("userEmail") || "" } });
+  const response = await client.get("/portal/products", { params: { email: email || sessionStorage.getItem("userEmail") || "" } });
   if (!Array.isArray(response.data)) throw new Error("The server returned an invalid product list.");
   return response.data;
 }
 
 export async function fetchOrders(email: string) {
   if (!email) throw new Error("Your session is missing an email address. Please sign in again.");
-  const response = await client.get("/orders", { params: { email } });
+  const response = await client.get("/portal/orders", { params: { email } });
   if (!Array.isArray(response.data)) throw new Error("The server returned an invalid order list.");
   return response.data;
 }

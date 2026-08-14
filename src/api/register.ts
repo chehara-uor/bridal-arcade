@@ -16,7 +16,7 @@ export interface RegistrationResult {
   expires_at?: string | number;
 }
 export async function registerUser(userData: Record<string, unknown>): Promise<RegistrationResult> {
-  const result = (await axios.post("/api/register", userData)).data as RegistrationResult;
+  const result = (await axios.post("/api/register/self", userData)).data as RegistrationResult;
   if (result.token) setAuthToken(result.token);
   return result;
 }

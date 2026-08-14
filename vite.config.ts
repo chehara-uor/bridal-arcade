@@ -6,25 +6,37 @@ import { componentTagger } from "lovable-tagger";
 
 // Every non-underscore-prefixed file in api/ is a Vercel-style serverless handler
 // (`(req, res) => ...`, default export). Vite's dev server doesn't know how to run
-// those on its own, so this middleware shims the same routing Vercel does in prod.
+// those on its own, so this middleware shims the same routing Vercel does in prod,
+// including Vercel's `[action].ts` dynamic-segment convention (api/foo/[action].ts
+// handles any /api/foo/<anything> and reads the segment out of the URL itself).
 // The route table is derived from the filesystem (not hand-maintained) so a new
 // api/foo.ts is picked up automatically instead of silently 404ing only in local dev.
-function discoverLocalApiRoutes(): Record<string, string> {
+function discoverLocalApiRoutes(): { exact: Record<string, string>; dynamic: { prefix: string; modulePath: string }[] } {
   const apiDir = path.resolve(__dirname, "api");
-  const routes: Record<string, string> = {};
-  for (const entry of fs.readdirSync(apiDir)) {
-    if (!entry.endsWith(".ts") || entry.startsWith("_")) continue;
-    const name = entry.slice(0, -3);
-    routes[`/api/${name}`] = `/api/${entry}`;
-  }
-  return routes;
+  const exact: Record<string, string> = {};
+  const dynamic: { prefix: string; modulePath: string }[] = [];
+  const walk = (dir: string, routePrefix: string) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name.startsWith("_")) continue;
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) { walk(fullPath, `${routePrefix}/${entry.name}`); continue; }
+      if (!entry.name.endsWith(".ts")) continue;
+      const modulePath = `/api${fullPath.slice(apiDir.length).replace(/\\/g, "/")}`;
+      if (/^\[.+\]\.ts$/.test(entry.name)) dynamic.push({ prefix: `${routePrefix}/`, modulePath });
+      else exact[`${routePrefix}/${entry.name.slice(0, -3)}`] = modulePath;
+    }
+  };
+  walk(apiDir, "/api");
+  dynamic.sort((a, b) => b.prefix.length - a.prefix.length);
+  return { exact, dynamic };
 }
 
 function localServerApi(): Plugin {
   return { name: "bridal-arcade-local-api", apply: "serve", configureServer(server) {
-    const localApiRoutes = discoverLocalApiRoutes();
+    const { exact, dynamic } = discoverLocalApiRoutes();
     server.middlewares.use(async (request, response, next) => {
-      const modulePath = localApiRoutes[new URL(request.url || "/", "http://localhost").pathname];
+      const pathname = new URL(request.url || "/", "http://localhost").pathname;
+      const modulePath = exact[pathname] ?? dynamic.find((route) => pathname.startsWith(route.prefix))?.modulePath;
       if (!modulePath) return next();
       try { const apiModule = await server.ssrLoadModule(modulePath); await apiModule.default(request, response); }
       catch (error) { server.config.logger.error(error instanceof Error ? error.stack || error.message : String(error)); if (!response.headersSent) { response.statusCode = 500; response.setHeader("Content-Type", "application/json"); response.end(JSON.stringify({ message: "The local API server encountered an error." })); } }
