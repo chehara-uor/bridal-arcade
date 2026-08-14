@@ -189,7 +189,7 @@ export default function BrideRegistration() {
               />
             </Field>
           </div>
-          <Error message={errors.form} />
+          <FormError message={errors.form} />
           <button
             type="button"
             onClick={sendOtp}
@@ -223,7 +223,7 @@ export default function BrideRegistration() {
             className="mt-6 h-14 w-full rounded-xl border bg-white text-center text-2xl font-bold tracking-[.4em]"
             placeholder="000000"
           />
-          <Error message={errors.otp || errors.form} />
+          <FormError message={errors.otp || errors.form} />
           <button
             type="button"
             onClick={verify}
@@ -344,7 +344,7 @@ function Visibility({
     </button>
   );
 }
-function Error({ message }: { message?: string }) {
+function FormError({ message }: { message?: string }) {
   return message ? (
     <p className="mt-4 rounded-xl bg-destructive/5 p-3 text-sm font-semibold text-destructive">
       {message}

@@ -22,6 +22,14 @@ export function dashboardFor(accountType: AccountType): string {
   return accountType === "business" ? "/vendor/dashboard" : "/bride/dashboard";
 }
 
+export function isAdministrator(user: Pick<PortalUser, "roles" | "role">): boolean {
+  return user.role === "administrator" || (Array.isArray(user.roles) && user.roles.includes("administrator"));
+}
+
+export function landingPageFor(user: PortalUser): string {
+  return isAdministrator(user) ? "/admin/dashboard" : dashboardFor(normalizeAccountType(user.account_type));
+}
+
 export function storeMockVendorUser(user: PortalUser) {
   sessionStorage.setItem(MOCK_USER_KEY, JSON.stringify(user));
   setStoredAccountType("business");
