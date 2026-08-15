@@ -20,6 +20,7 @@ import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminUserDetail from "./pages/AdminUserDetail";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/register" element={<RegisterChoice />} />
           <Route path="/register/bride" element={<BrideRegistration />} />
           <Route path="/register/vendor" element={<VendorRegistration />} />

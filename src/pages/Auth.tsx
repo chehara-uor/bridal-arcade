@@ -83,7 +83,7 @@ export default function Auth() {
               <input className="field-input pl-11 pr-12" type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={(e) => { setFormData({ ...formData, password: e.target.value }); setErrors({ ...errors, password: undefined }); }} placeholder="Enter password" autoComplete="current-password" required />
               <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"} className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground hover:bg-muted">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
             </Field>
-            <div className="flex justify-end"><a href="mailto:info@bridalarcade.lk" className="text-sm font-semibold text-primary hover:underline">Need help signing in?</a></div>
+            <div className="flex items-center justify-between gap-4"><a href="mailto:info@bridalarcade.lk" className="text-sm font-semibold text-muted-foreground hover:text-primary hover:underline">Need help?</a><Link to="/reset-password" className="text-sm font-semibold text-primary hover:underline">Forgot password?</Link></div>
             <button className="primary-button w-full" disabled={loading || checkingSession}>{loading || checkingSession ? "Please wait…" : <>Sign in <ArrowRight size={18} /></>}</button>
           </form>
 
