@@ -30,3 +30,11 @@ export function productPlanLimitMessage(result: VendorProductResult | null): str
   const planName = String(plan.pricing_plan || "current").replace(/[_-]+/g, " ");
   return `You've used all ${limitLabel} listings on your ${planName} plan — this item was saved as a draft and won't publish until you free up a slot or upgrade.`;
 }
+
+export function productPlanNeedsUpgrade(result: VendorProductResult | null): boolean {
+  const plan = result?.plan;
+  if (!plan) return false;
+  const limit = Number(plan.plan_limit);
+  const published = Number(plan.published_count);
+  return plan.at_limit || (Number.isFinite(limit) && Number.isFinite(published) && limit > 0 && published >= limit - 1);
+}

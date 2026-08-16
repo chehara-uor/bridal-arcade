@@ -28,6 +28,7 @@ import { getRequestErrorMessage, storeUser } from "../api/portal";
 import {
   submitVendorProduct,
   productPlanLimitMessage,
+  productPlanNeedsUpgrade,
   type VendorProductResult,
 } from "../api/vendorProduct";
 import { sendWidgetOtp, verifyOtpAndRegister } from "../api/widgetOtp";
@@ -912,6 +913,7 @@ function CropBox({
 
 function SuccessStep({ name, product, images, result }: any) {
   const planLimitMessage = productPlanLimitMessage(result);
+  const showUpgrade = productPlanNeedsUpgrade(result);
   return (
     <section className="mx-auto max-w-xl py-7 text-center">
       <span className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-success/10 text-success">
@@ -947,6 +949,7 @@ function SuccessStep({ name, product, images, result }: any) {
       <a href="/" target="_top" className="primary-button mt-7 w-full">
         Go to Bridal Arcade portal <ArrowRight size={17} />
       </a>
+      {showUpgrade && <a href="/bride/plans" target="_top" className="secondary-button mt-3 w-full">View pricing plans</a>}
     </section>
   );
 }

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { clearMockVendorUser, getStoredAccountType, setStoredAccountType, type AccountType } from "../auth/account";
 import { apiClient as client, clearAuthToken, getAuthToken, setAuthToken } from "./client";
+import { normalizePricingPlan, type PricingPlan } from "../auth/pricingPlan";
 
 export interface PortalUser {
   id: string;
@@ -10,6 +11,7 @@ export interface PortalUser {
   role?: string;
   account_type?: AccountType;
   profile_status?: "active" | "inactive";
+  pricing_plan?: PricingPlan;
 }
 
 export async function loginPartner(usernameOrEmail: string, password: string): Promise<PortalUser> {
@@ -53,6 +55,7 @@ export function storeUser(user: PortalUser, accountType?: AccountType) {
   sessionStorage.setItem("userRoles", JSON.stringify(user.roles || []));
   sessionStorage.setItem("userRole", user.role || user.roles?.[0] || "");
   sessionStorage.setItem("profileStatus", user.profile_status || "active");
+  sessionStorage.setItem("pricingPlan", normalizePricingPlan(user.pricing_plan));
   setStoredAccountType(accountType || user.account_type || getStoredAccountType());
   localStorage.setItem("isAuthenticated", "true");
 }
