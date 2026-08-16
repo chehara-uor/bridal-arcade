@@ -28,9 +28,10 @@ export default function AdminUserDetail() {
     setChanging(product.id);
     try {
       const response = await updateAdminProductStatus(product.id, status);
-      const newStatus = String(response?.new_status ?? response?.status ?? status);
+      const newStatus = response.new_status;
       setProducts((old) => old.map((item) => item.id === product.id ? { ...item, status: newStatus } : item));
-      toast.success(`${product.title} is now ${newStatus === "publish" ? "live" : newStatus}.`);
+      if (response.plan_limited) toast.warning(response.message || "This listing stayed in draft because the owner has reached their plan's listing limit.");
+      else toast.success(`${product.title} is now ${newStatus === "publish" ? "live" : newStatus}.`);
     } catch (error) { toast.error(getRequestErrorMessage(error, "Unable to update this product.")); }
     finally { setChanging(null); }
   };

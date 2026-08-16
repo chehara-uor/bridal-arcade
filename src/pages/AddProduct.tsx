@@ -27,6 +27,7 @@ import { PARENT_CATEGORIES, childCategoriesFor } from "../constants/category";
 import { getRequestErrorMessage } from "../api/portal";
 import {
   submitVendorProduct,
+  productPlanLimitMessage,
   type VendorProductResult,
 } from "../api/vendorProduct";
 import AppShell from "../components/AppShell";
@@ -779,6 +780,7 @@ function CropBox({
 }
 
 function SuccessStep({ name, product, images, result }: any) {
+  const planLimitMessage = productPlanLimitMessage(result);
   return (
     <section className="mx-auto max-w-xl py-7 text-center">
       <span className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-success/10 text-success">
@@ -788,9 +790,8 @@ function SuccessStep({ name, product, images, result }: any) {
       <h1 className="display-font mt-2 text-3xl font-bold">
         Thank you, {name}!
       </h1>
-      <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-        Your item was submitted successfully. Our admin team will review the
-        details and photos before accepting and publishing it.
+      <p className={`mx-auto mt-3 max-w-md text-sm leading-6 ${planLimitMessage ? "rounded-xl bg-amber-50 p-4 font-semibold text-amber-900" : "text-muted-foreground"}`}>
+        {planLimitMessage || "Your item was submitted successfully. Our admin team will review the details and photos before accepting and publishing it."}
       </p>
       <div className="mt-7 rounded-2xl border border-border-light bg-white p-5 text-left">
         <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">

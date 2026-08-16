@@ -1,4 +1,5 @@
 import { apiClient as adminClient } from "./client";
+import type { ProductStatusResult } from "./product";
 
 const requester = () => ({ requester_email: sessionStorage.getItem("userEmail") || "", requester_type: "administrator" });
 
@@ -73,6 +74,8 @@ export async function fetchAdminUserProducts(email: string): Promise<AdminProduc
   }));
 }
 
-export async function updateAdminProductStatus(productId: number, status: "publish" | "draft" | "trash") {
-  return (await adminClient.post("/admin/product-status", { ...requester(), product_id: productId, status })).data;
+export async function updateAdminProductStatus(productId: number, status: "publish" | "draft" | "trash"): Promise<ProductStatusResult> {
+  const data = (await adminClient.post("/admin/product-status", { ...requester(), product_id: productId, status })).data;
+  if (!["publish", "draft", "trash"].includes(data?.new_status)) throw new Error("The server returned an invalid product status.");
+  return data as ProductStatusResult;
 }
