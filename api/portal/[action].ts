@@ -77,8 +77,7 @@ async function productStatus(request: any, response: any, authorization: string)
     if (!Number.isInteger(productId) || productId <= 0 || !["publish", "draft"].includes(status)) return sendJson(response, 400, { message: "Invalid product update." });
     const result = await wordpressJson("/wp-json/bridal/v2/update-product-status", { method: "POST", headers: { Authorization: authorization, "Content-Type": "application/json" }, body: JSON.stringify({ product_id: productId, status }) });
     if (!result.response.ok) return sendJson(response, result.response.status, { message: result.data?.message || "Unable to update this product." });
-    const data = result.data && typeof result.data === "object" ? result.data : {};
-    return sendJson(response, 200, { ...data, success: true });
+    return sendJson(response, 200, result.data);
   } catch { return sendJson(response, 502, { message: "Unable to update this product." }); }
 }
 

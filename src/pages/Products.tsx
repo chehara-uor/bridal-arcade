@@ -51,10 +51,12 @@ export default function Products() {
     try {
       const result = await sendProductStatus({ product_id: product.id, status: next === "Available" ? "publish" : "draft" });
       if (result?.success) {
-        const nextProducts = products.map((item) => item.id === product.id ? { ...item, status: next } : item);
+        const actualStatus: Product["status"] = result.new_status === "publish" ? "Available" : "Draft";
+        const nextProducts = products.map((item) => item.id === product.id ? { ...item, status: actualStatus } : item);
         setProducts(nextProducts);
         sessionStorage.setItem("productData", JSON.stringify(nextProducts));
-        toast.success(next === "Available" ? "Item is now live" : "Item moved to draft");
+        if (result.plan_limited) toast.warning(result.message || "This item stayed in draft because you have reached your plan's listing limit.");
+        else toast.success(actualStatus === "Available" ? "Item is now live" : "Item moved to draft");
       } else throw new Error("Update rejected");
     } catch (requestError) { toast.error(getRequestErrorMessage(requestError, "We couldn't update this item. Please try again.")); }
     finally { setUpdating(null); }
