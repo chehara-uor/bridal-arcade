@@ -28,10 +28,12 @@ import { getRequestErrorMessage } from "../api/portal";
 import {
   submitVendorProduct,
   productPlanLimitMessage,
+  productPlanNeedsUpgrade,
   type VendorProductResult,
 } from "../api/vendorProduct";
 import AppShell from "../components/AppShell";
 import { useNavigate } from "react-router-dom";
+import { getStoredPricingPlan, pricingPlanLabel } from "../auth/pricingPlan";
 
 type Step = 1 | 2 | 3;
 type Errors = Record<string, string | undefined>;
@@ -150,6 +152,7 @@ export default function AddProduct() {
   const [result, setResult] = useState<VendorProductResult | null>(null);
   const navigate = useNavigate();
   const ownerName = sessionStorage.getItem("userName") || "Bridal Owner";
+  const pricingPlan = getStoredPricingPlan();
   const children = childCategoriesFor(Number(product.parent));
 
   const updateProduct = (
@@ -251,7 +254,8 @@ export default function AddProduct() {
   };
 
   return <AppShell><div className="mx-auto max-w-[1180px] px-4 py-6 sm:px-7 sm:py-8 xl:px-10">
-    <header className="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p className="eyebrow">My bridal collection</p><h1 className="page-title mt-1.5">Add a product</h1><p className="mt-2 text-sm text-muted-foreground sm:text-base">Submit your bridal wear for the Bridal Arcade team to review.</p></div><span className="rounded-full border border-primary/10 bg-primary/5 px-4 py-2 text-xs font-bold text-primary">Step {step} of 3</span></header>
+    <header className="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p className="eyebrow">My bridal collection</p><h1 className="page-title mt-1.5">Add a product</h1><p className="mt-2 text-sm text-muted-foreground sm:text-base">Submit your bridal wear for the Bridal Arcade team to review.</p><div className="mt-3 flex flex-wrap items-center gap-3"><span className="rounded-full border border-primary/10 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary">{pricingPlanLabel(pricingPlan)}</span>{pricingPlan === "free" && <a href="/bride/plans" className="text-xs font-bold text-primary underline-offset-4 hover:underline">View plans for more listings</a>}</div></div><span className="rounded-full border border-primary/10 bg-primary/5 px-4 py-2 text-xs font-bold text-primary">Step {step} of 3</span></header>
+    {pricingPlan === "free" && step < 3 && <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><strong>Free plan:</strong> Your listing can be saved, but publishing depends on your available plan slots. <a href="/bride/plans" className="font-bold underline">View pricing plans</a> to increase your allowance.</div>}
     <div className="mb-7 grid grid-cols-3 gap-2">{["Item details","Photos","Complete"].map((label,index) => <div key={label}><span className={`block h-1.5 rounded-full ${index + 1 <= step ? "bg-primary" : "bg-muted-dark"}`}/><p className={`mt-2 text-center text-[10px] font-bold uppercase tracking-wide sm:text-xs ${index + 1 === step ? "text-primary" : "text-muted-foreground"}`}>{label}</p></div>)}</div>
     <section key={step} className="surface-card animate-fade-up p-5 sm:p-7 lg:p-9">
       {step === 1 && <ProductStep value={product} errors={errors} update={updateProduct} children={children} back={() => navigate("/bride/dashboard")} next={validateProduct}/>}
@@ -781,6 +785,7 @@ function CropBox({
 
 function SuccessStep({ name, product, images, result }: any) {
   const planLimitMessage = productPlanLimitMessage(result);
+  const showUpgrade = productPlanNeedsUpgrade(result);
   return (
     <section className="mx-auto max-w-xl py-7 text-center">
       <span className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-success/10 text-success">
@@ -814,6 +819,7 @@ function SuccessStep({ name, product, images, result }: any) {
         </div>
       </div>
       <a href="/bride/products" className="primary-button mt-7 w-full">View my products <ArrowRight size={17} /></a>
+      {showUpgrade && <a href="/bride/plans" className="secondary-button mt-3 w-full">View pricing plans</a>}
     </section>
   );
 }

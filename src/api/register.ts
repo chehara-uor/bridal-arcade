@@ -11,6 +11,7 @@ export interface RegistrationResult {
     roles: string[];
     role?: string;
     profile_status: "active" | "inactive";
+    pricing_plan?: "free" | "basic" | "standard";
   };
   token?: string;
   expires_at?: string | number;

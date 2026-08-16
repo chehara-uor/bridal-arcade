@@ -7,6 +7,7 @@ export interface PortalUser {
   role?: string;
   account_type?: "individual" | "business";
   profile_status?: "active" | "inactive";
+  pricing_plan?: "free" | "basic" | "standard";
 }
 
 export function bearerAuthorization(request: { headers: Record<string, string | string[] | undefined> }): string | null {

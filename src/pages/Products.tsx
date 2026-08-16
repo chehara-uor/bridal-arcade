@@ -55,7 +55,7 @@ export default function Products() {
         const nextProducts = products.map((item) => item.id === product.id ? { ...item, status: actualStatus } : item);
         setProducts(nextProducts);
         sessionStorage.setItem("productData", JSON.stringify(nextProducts));
-        if (result.plan_limited) toast.warning(result.message || "This item stayed in draft because you have reached your plan's listing limit.");
+        if (result.plan_limited) toast.warning(result.message || "This item stayed in draft because you have reached your plan's listing limit.", { action: { label: "View plans", onClick: () => window.location.assign("/bride/plans") } });
         else toast.success(actualStatus === "Available" ? "Item is now live" : "Item moved to draft");
       } else throw new Error("Update rejected");
     } catch (requestError) { toast.error(getRequestErrorMessage(requestError, "We couldn't update this item. Please try again.")); }

@@ -138,6 +138,7 @@ async function login(request: any, response: any) {
       role: typeof wpUser.role === "string" ? wpUser.role : undefined,
       account_type: wpUser.account_type === "business" || wpUser.account_type === "vendor" ? "business" : wpUser.account_type === "individual" ? "individual" : undefined,
       profile_status: wpUser.profile_status === "inactive" ? "inactive" : "active",
+      pricing_plan: wpUser.pricing_plan === "basic" || wpUser.pricing_plan === "standard" ? wpUser.pricing_plan : "free",
     };
     return sendJson(response, 200, { token: String(token), expires_at: result.data?.expires_at, user });
   } catch {

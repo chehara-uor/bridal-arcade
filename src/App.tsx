@@ -21,6 +21,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminUserDetail from "./pages/AdminUserDetail";
 import ResetPassword from "./pages/ResetPassword";
+import PricingPlans from "./pages/PricingPlans";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
             </ProtectedRoute>
           } />
           <Route path="/bride/products/new" element={<ProtectedRoute accountType="individual"><AddProduct /></ProtectedRoute>} />
+          <Route path="/bride/plans" element={<ProtectedRoute accountType="individual"><PricingPlans portal="individual" /></ProtectedRoute>} />
           <Route path="/bride/orders" element={<Navigate to="/bride/dashboard" replace />} />
           <Route path="/bride/my-account" element={
             <ProtectedRoute accountType="individual">
@@ -58,6 +60,7 @@ const App = () => (
           <Route path="/vendor/products" element={<ProtectedRoute accountType="business"><VendorPlaceholder page="products" /></ProtectedRoute>} />
           <Route path="/vendor/orders" element={<ProtectedRoute accountType="business"><VendorPlaceholder page="orders" /></ProtectedRoute>} />
           <Route path="/vendor/account" element={<ProtectedRoute accountType="business"><VendorPlaceholder page="account" /></ProtectedRoute>} />
+          <Route path="/vendor/plans" element={<ProtectedRoute accountType="business"><PricingPlans portal="vendor" /></ProtectedRoute>} />
           <Route path="/admin/dashboard" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
           <Route path="/admin/users" element={<AdminProtectedRoute><AdminUsers /></AdminProtectedRoute>} />
           <Route path="/admin/users/:email" element={<AdminProtectedRoute><AdminUserDetail /></AdminProtectedRoute>} />
