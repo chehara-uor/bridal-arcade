@@ -7,6 +7,7 @@ import {
   Eye,
   EyeOff,
   ImagePlus,
+  LoaderCircle,
   LockKeyhole,
   Mail,
   Minus,
@@ -329,7 +330,7 @@ export default function VendorWidget() {
   };
 
   return (
-    <main className="flex min-h-[900px] justify-center bg-[#efeae4]">
+    <main className="relative flex min-h-[900px] justify-center bg-[#efeae4]">
       <div className="flex h-[900px] w-full max-w-[690px] flex-col overflow-hidden bg-[#fbf9f6] shadow-[0_20px_70px_rgba(50,26,39,.12)] sm:border-x sm:border-white">
         <WidgetHeader step={step} />
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
@@ -391,7 +392,32 @@ export default function VendorWidget() {
           </div>
         </div>
       </div>
+      {busy && step === 4 && <SubmissionOverlay />}
     </main>
+  );
+}
+
+function SubmissionOverlay() {
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-[#24121d]/75 px-6 backdrop-blur-sm"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <div className="w-full max-w-sm rounded-3xl bg-white p-8 text-center shadow-2xl">
+        <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-accent text-primary">
+          <LoaderCircle className="animate-spin" size={32} />
+        </span>
+        <h2 className="display-font mt-5 text-2xl font-bold">
+          Submitting your item
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          We’re preparing your listing. This
+          may take a moment—please keep this window open.
+        </p>
+      </div>
+    </div>
   );
 }
 
