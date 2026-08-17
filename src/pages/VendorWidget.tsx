@@ -946,7 +946,7 @@ function SuccessStep({ name, product, images, result }: any) {
           ))}
         </div>
       </div>
-      <a href="/" target="_top" className="primary-button mt-7 w-full">
+      <a href="https://portal.bridalarcade.lk/" target="_top" className="primary-button mt-7 w-full">
         Go to Bridal Arcade portal <ArrowRight size={17} />
       </a>
       {showUpgrade && <a href="/bride/plans" target="_top" className="secondary-button mt-3 w-full">View pricing plans</a>}
