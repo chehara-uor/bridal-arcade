@@ -10,7 +10,7 @@ export const LOCATION_DISTANCES: CategoryItem[] = [
   { id: 96, type: 'child', name: 'Bridal Frocks', parentId: 95 },
   { id: 97, type: 'child', name: 'Preshoot Frocks', parentId: 95 },
   { id: 83, type: 'parent', name: 'Lehenga' },
-  { id: 84, type: 'child', name: 'Homecoming Lehenga', parentId: 83 },
+  { id: 84, type: 'child', name: 'Red & Maroon', parentId: 83 },
   { id: 100, type: 'parent', name: 'Saree', },
   { id: 77, type: 'child', name: 'Kandyan', parentId: 100 },
   { id: 71, type: 'child', name: 'Indian Bridal', parentId: 100 },

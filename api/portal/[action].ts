@@ -115,8 +115,24 @@ async function vendorProduct(request: any, response: any, authorization: string)
 
     const url = wordpressUrl();
     const wordpress = await fetch(`${url}/wp-json/bridal/v2/products`, { method: "POST", cache: "no-store", headers: { Authorization: authorization, Accept: "application/json", "Cache-Control": "no-store" }, body: outgoing });
-    const data = await wordpress.json().catch(() => ({ message: "WordPress returned an invalid product response." }));
-    if (!wordpress.ok) return sendJson(response, wordpress.status, { message: data?.message || "The product could not be submitted." });
+    const responseText = await wordpress.text();
+    let data: any;
+    try { data = responseText ? JSON.parse(responseText) : {}; }
+    catch { data = { message: responseText || "WordPress returned an empty product response." }; }
+    if (!wordpress.ok) {
+      // Do not log the bearer token or uploaded image bytes. WordPress's status,
+      // error code, and complete response body are enough to identify the failure.
+      console.error("WordPress product creation failed", {
+        status: wordpress.status,
+        statusText: wordpress.statusText,
+        body: data,
+      });
+      return sendJson(response, wordpress.status, {
+        code: typeof data?.code === "string" ? data.code : "product_request_failed",
+        message: data?.message || "The product could not be submitted.",
+        details: data?.data,
+      });
+    }
     return sendJson(response, 201, data);
   } catch (error) {
     console.error("vendor-product submission failed:", error);

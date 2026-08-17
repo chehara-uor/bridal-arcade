@@ -100,9 +100,10 @@ export function readSessionCache<T>(key: string): T | null {
 export function getRequestErrorMessage(error: unknown, fallback: string): string {
   if (!axios.isAxiosError(error)) return error instanceof Error && error.message ? error.message : fallback;
   if (!error.response) return "We couldn't connect to Bridal Arcade. Check your internet connection and try again.";
-  const data = error.response.data as { message?: unknown } | undefined;
+  const data = error.response.data as { code?: unknown; message?: unknown } | undefined;
   const serverMessage = typeof data?.message === "string" ? data.message.replace(/<[^>]*>/g, "").trim() : "";
-  if (serverMessage) return serverMessage;
+  const serverCode = typeof data?.code === "string" ? data.code.trim() : "";
+  if (serverMessage) return serverCode ? `${serverMessage} (${serverCode}, HTTP ${error.response.status})` : serverMessage;
   if (error.response.status === 401) return "Your session has expired. Please sign in again.";
   if (error.response.status === 403) return "You don't have permission to access this part of Bridal Arcade.";
   if (error.response.status >= 500) return "Bridal Arcade is temporarily unavailable. Please try again in a moment.";
