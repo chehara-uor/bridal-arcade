@@ -6,6 +6,7 @@
 // GET  /api/portal/orders          (was api/orders.ts)
 // POST /api/portal/product-status  (was api/product-status.ts)
 // POST /api/portal/vendor-product  (was api/vendor-product.ts)
+import { File } from "node:buffer";
 import { readJson, requireBearer, sendJson, wordpressJson, wordpressUrl } from "../../lib/session.js";
 
 const allowedProductFields = ["name", "description", "short_description", "sku", "regular_price", "sale_price", "parent", "child", "catalog_visibility", "manage_stock", "stock_quantity", "stock_status", "virtual", "owner_location", "owner_mobile", "owner_commission", "chest_size", "wear_count", "owner_declared_value"];
@@ -32,7 +33,7 @@ async function dashboard(request: any, response: any, authorization: string) {
     const result = await wordpressJson(`/wp-json/bridal/v2/dashboard?email=${encodeURIComponent(email)}`, { headers: { Authorization: authorization } });
     if (!result.response.ok) return sendJson(response, result.response.status, { message: "Unable to load your dashboard." });
     return sendJson(response, 200, result.data);
-  } catch { return sendJson(response, 502, { message: "Unable to connect to Bridal Arcade." }); }
+  } catch (error) { console.error("dashboard failed:", error); return sendJson(response, 502, { message: "Unable to connect to Bridal Arcade." }); }
 }
 
 async function recentActivity(request: any, response: any, authorization: string) {
@@ -43,7 +44,7 @@ async function recentActivity(request: any, response: any, authorization: string
     const result = await wordpressJson(`/wp-json/lead-tracker/v1/recent-activity?${query}`, { headers: { Authorization: authorization } });
     if (!result.response.ok) return sendJson(response, result.response.status, { message: "Unable to load recent Lead Tracker activity." });
     return sendJson(response, 200, result.data);
-  } catch { return sendJson(response, 502, { message: "Unable to connect to Lead Tracker." }); }
+  } catch (error) { console.error("recent-activity failed:", error); return sendJson(response, 502, { message: "Unable to connect to Lead Tracker." }); }
 }
 
 async function products(request: any, response: any, authorization: string) {
@@ -56,7 +57,7 @@ async function products(request: any, response: any, authorization: string) {
     const list = Array.isArray(result.data) ? result.data : Array.isArray(result.data?.products) ? result.data.products : Array.isArray(result.data?.data) ? result.data.data : null;
     if (!list) return sendJson(response, 502, { message: "WordPress returned an invalid product list." });
     return sendJson(response, 200, list);
-  } catch { return sendJson(response, 502, { message: "Unable to load products." }); }
+  } catch (error) { console.error("products failed:", error); return sendJson(response, 502, { message: "Unable to load products." }); }
 }
 
 async function orders(request: any, response: any, authorization: string) {
@@ -65,7 +66,7 @@ async function orders(request: any, response: any, authorization: string) {
     const email = new URL(request.url || "/", "http://localhost").searchParams.get("email") || "";
     const result = await wordpressJson(`/wp-json/bridal/v1/orderlist?email=${encodeURIComponent(email)}`, { headers: { Authorization: authorization } });
     return sendJson(response, result.response.ok ? 200 : result.response.status, result.data);
-  } catch { return sendJson(response, 502, { message: "Unable to load orders." }); }
+  } catch (error) { console.error("orders failed:", error); return sendJson(response, 502, { message: "Unable to load orders." }); }
 }
 
 async function productStatus(request: any, response: any, authorization: string) {
@@ -78,7 +79,7 @@ async function productStatus(request: any, response: any, authorization: string)
     const result = await wordpressJson("/wp-json/bridal/v2/update-product-status", { method: "POST", headers: { Authorization: authorization, "Content-Type": "application/json" }, body: JSON.stringify({ product_id: productId, status }) });
     if (!result.response.ok) return sendJson(response, result.response.status, { message: result.data?.message || "Unable to update this product." });
     return sendJson(response, 200, result.data);
-  } catch { return sendJson(response, 502, { message: "Unable to update this product." }); }
+  } catch (error) { console.error("product-status failed:", error); return sendJson(response, 502, { message: "Unable to update this product." }); }
 }
 
 async function vendorProduct(request: any, response: any, authorization: string) {
@@ -117,7 +118,8 @@ async function vendorProduct(request: any, response: any, authorization: string)
     const data = await wordpress.json().catch(() => ({ message: "WordPress returned an invalid product response." }));
     if (!wordpress.ok) return sendJson(response, wordpress.status, { message: data?.message || "The product could not be submitted." });
     return sendJson(response, 201, data);
-  } catch {
+  } catch (error) {
+    console.error("vendor-product submission failed:", error);
     return sendJson(response, 502, { message: "Unable to submit the product to Bridal Arcade." });
   }
 }
