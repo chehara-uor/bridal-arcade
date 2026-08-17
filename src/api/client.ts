@@ -17,9 +17,12 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     const isLogin = String(error.config?.url || "").endsWith("/login");
+    const isEmbeddedWidget = window.location.pathname.startsWith("/arcade-widget");
     if (error.response?.status === 401 && !isLogin) {
       clearAuthToken();
-      if (window.location.pathname !== "/") window.location.replace("/");
+      // Keep widget failures inside the iframe so its form can display the
+      // server's error instead of unexpectedly replacing the widget with /.
+      if (!isEmbeddedWidget && window.location.pathname !== "/") window.location.replace("/");
     }
     return Promise.reject(error);
   },

@@ -484,6 +484,7 @@ function AccountStep({ value, errors, update, next, busy }: any) {
       </div>
       <FormError message={errors.form} />
       <button
+        type="button"
         onClick={next}
         disabled={busy}
         className="primary-button mt-7 w-full"
@@ -533,6 +534,7 @@ function OtpStep({
       />
       <FormError message={errors.otp || errors.form} />
       <button
+        type="button"
         onClick={next}
         disabled={busy}
         className="primary-button mt-5 w-full"
@@ -541,10 +543,10 @@ function OtpStep({
         <Check size={17} />
       </button>
       <div className="mt-4 flex justify-center gap-5 text-sm font-semibold">
-        <button onClick={back} className="text-muted-foreground">
+        <button type="button" onClick={back} className="text-muted-foreground">
           Change details
         </button>
-        <button onClick={resend} disabled={busy} className="text-primary">
+        <button type="button" onClick={resend} disabled={busy} className="text-primary">
           Resend code
         </button>
       </div>
@@ -1068,11 +1070,12 @@ function Buttons({
 }) {
   return (
     <div className="mt-7 grid grid-cols-[auto_1fr] gap-3">
-      <button onClick={back} className="secondary-button px-4">
+      <button type="button" onClick={back} className="secondary-button px-4">
         <ArrowLeft size={17} />
         Back
       </button>
       <button
+        type="button"
         onClick={next}
         disabled={disabled}
         className="primary-button w-full"

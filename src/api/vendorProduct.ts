@@ -1,3 +1,4 @@
+import axios from "axios";
 import { apiClient } from "./client";
 
 export interface ProductPlan {
@@ -17,9 +18,22 @@ export interface VendorProductResult {
 }
 
 export async function submitVendorProduct(form: FormData): Promise<VendorProductResult> {
-  const response = await apiClient.post("/portal/vendor-product", form);
-  const data = response.data ?? {};
-  return { ...data, id: Number(data.product_id ?? data.id) || 0 } as VendorProductResult;
+  if (!(form instanceof FormData)) throw new TypeError("Product submission requires FormData.");
+  try {
+    // Do not set Content-Type here. Axios/browser supplies multipart/form-data
+    // with the required boundary, and the shared client supplies Authorization.
+    const response = await apiClient.post("/portal/vendor-product", form);
+    const data = response.data ?? {};
+    return { ...data, id: Number(data.product_id ?? data.id) || 0 } as VendorProductResult;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error("Vendor product submission failed", {
+        status: error.response?.status,
+        body: error.response?.data,
+      });
+    }
+    throw error;
+  }
 }
 
 export function productPlanLimitMessage(result: VendorProductResult | null): string | null {
