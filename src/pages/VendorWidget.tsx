@@ -134,7 +134,7 @@ const initialProduct = {
 const initialImages: CropImage[] = [
   "Main / front view",
   "Full outfit view",
-  "Detail view",
+  "Detail view (optional)",
 ].map((label, index) => ({
   id: index + 1,
   label,
@@ -274,14 +274,16 @@ export default function VendorWidget() {
   };
 
   const submit = async () => {
-    if (images.some((image) => !image.file))
+    if (images.slice(0, 2).some((image) => !image.file))
       return setErrors({
-        images: "Upload all three images before submitting.",
+        images: "Upload the first two images before submitting.",
       });
     setBusy(true);
     setErrors({});
     try {
-      const preparedImages = await Promise.all(images.map(createCroppedFile));
+      const preparedImages = await Promise.all(
+        images.filter((image) => image.file).map(createCroppedFile),
+      );
       const form = new FormData();
       form.set("name", product.title.trim());
       form.set(
@@ -307,8 +309,8 @@ export default function VendorWidget() {
       form.set("wear_count", product.wearCount);
       form.set("availability_type", availabilityType(product.action));
       form.set("main_image", preparedImages[0]);
-      form.append("gallery_images[]", preparedImages[1]);
-      form.append("gallery_images[]", preparedImages[2]);
+      for (const image of preparedImages.slice(1))
+        form.append("gallery_images[]", image);
       const created = await submitVendorProduct(form);
       setSubmittedImages(preparedImages);
       setResult(created);
@@ -687,8 +689,8 @@ function ImagesStep({ images, setImages, errors, back, submit, busy }: any) {
     <section>
       <Title
         eyebrow="Step 4 · Photos"
-        title="Upload three clear images"
-        text="Listings with unclear, dark, unrelated, or badly framed photos may be rejected during review."
+        title="Upload clear images"
+        text="The first two photos are required; the detail photo is optional. Listings with unclear, dark, unrelated, or badly framed photos may be rejected during review."
       />
       <PhotoGuide />
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
