@@ -11,6 +11,8 @@ export interface ProductPlan {
 export interface VendorProductResult {
   id: number;
   product_id?: number;
+  main_image_id?: number;
+  gallery_image_ids?: number[];
   name?: string;
   status?: string;
   message?: string;
@@ -20,10 +22,22 @@ export interface VendorProductResult {
 export async function submitVendorProduct(form: FormData): Promise<VendorProductResult> {
   if (!(form instanceof FormData)) throw new TypeError("Product submission requires FormData.");
   try {
+    if (import.meta.env.DEV) {
+      const { productFormDataDebugRows } = await import("./productFormData");
+      console.table(productFormDataDebugRows(form));
+    }
     // Do not set Content-Type here. Axios/browser supplies multipart/form-data
     // with the required boundary, and the shared client supplies Authorization.
     const response = await apiClient.post("/portal/vendor-product", form);
     const data = response.data ?? {};
+    if (import.meta.env.DEV) {
+      console.info("Product creation response", {
+        product_id: data.product_id ?? data.id,
+        main_image_id: data.main_image_id,
+        gallery_image_ids: data.gallery_image_ids,
+        status: data.status,
+      });
+    }
     return { ...data, id: Number(data.product_id ?? data.id) || 0 } as VendorProductResult;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -31,6 +45,9 @@ export async function submitVendorProduct(form: FormData): Promise<VendorProduct
         status: error.response?.status,
         body: error.response?.data,
       });
+      if (error.response?.status === 409 && error.response?.data?.code === "duplicate_sku") {
+        throw new Error(error.response.data.message || "That SKU already exists. The product was not created.");
+      }
     }
     throw error;
   }

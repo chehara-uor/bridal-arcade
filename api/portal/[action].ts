@@ -109,7 +109,7 @@ async function vendorProduct(request: any, response: any, authorization: string)
 
     const mainImage = submitted.get("main_image");
     const gallery = submitted.getAll("gallery_images[]");
-    if (!(mainImage instanceof File) || gallery.length < 1 || gallery.length > 2 || gallery.some((image) => !(image instanceof File))) return sendJson(response, 400, { message: "At least two valid images are required." });
+    if (!(mainImage instanceof File) || gallery.length > 2 || gallery.some((image) => !(image instanceof File))) return sendJson(response, 400, { message: "One main image and no more than two valid gallery images are allowed." });
     outgoing.set("main_image", mainImage, mainImage.name || "main-image.jpg");
     for (const image of gallery as File[]) outgoing.append("gallery_images[]", image, image.name || "gallery-image.jpg");
 

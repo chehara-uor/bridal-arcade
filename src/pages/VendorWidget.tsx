@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -29,9 +29,9 @@ import { getRequestErrorMessage, storeUser } from "../api/portal";
 import {
   submitVendorProduct,
   productPlanLimitMessage,
-  productPlanNeedsUpgrade,
   type VendorProductResult,
 } from "../api/vendorProduct";
+import { createProductFormData, productDescriptionHtml } from "../api/productFormData";
 import { sendWidgetOtp, verifyOtpAndRegister } from "../api/widgetOtp";
 
 type Step = 1 | 2 | 3 | 4 | 5;
@@ -155,11 +155,17 @@ export default function VendorWidget() {
   const [otp, setOtp] = useState("");
   const [otpChallenge, setOtpChallenge] = useState("");
   const [images, setImages] = useState<CropImage[]>(initialImages);
-  const [submittedImages, setSubmittedImages] = useState<File[]>([]);
+  const [submittedImageUrls, setSubmittedImageUrls] = useState<string[]>([]);
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<VendorProductResult | null>(null);
+  const submittingRef = useRef(false);
   const children = childCategoriesFor(Number(product.parent));
+
+  useEffect(
+    () => () => submittedImageUrls.forEach((url) => URL.revokeObjectURL(url)),
+    [submittedImageUrls],
+  );
 
   const updateAccount = (field: keyof typeof account, value: string) => {
     setAccount((current) => ({ ...current, [field]: value }));
@@ -275,48 +281,43 @@ export default function VendorWidget() {
   };
 
   const submit = async () => {
-    if (images.slice(0, 2).some((image) => !image.file))
+    if (submittingRef.current) return;
+    if (images.slice(0, 2).some((image) => !image.file || !image.naturalWidth || !image.naturalHeight) || images.some((image) => image.file && (!image.naturalWidth || !image.naturalHeight)))
       return setErrors({
-        images: "Upload the first two images before submitting.",
+        images: "Upload the first two images and wait for their previews before submitting.",
       });
+    submittingRef.current = true;
     setBusy(true);
     setErrors({});
     try {
+      const submissionKey = createSubmissionKey();
       const preparedImages = await Promise.all(
-        images.filter((image) => image.file).map(createCroppedFile),
+        images.filter((image) => image.file).map((image) => createCroppedFile(image, submissionKey)),
       );
-      const form = new FormData();
-      form.set("name", product.title.trim());
-      form.set(
-        "description",
-        `<p>${escapeHtml(product.description.trim()).replace(/\n/g, "<br>")}</p>`,
-      );
-      form.set("short_description", product.description.trim().slice(0, 180));
-      form.set("sku", `BAP-${Date.now().toString(36).toUpperCase()}`);
-      form.set("regular_price", product.rentalPrice || product.sellingPrice);
-      if (product.action === "Rent or Sell" && product.sellingPrice)
-        form.set("sale_price", product.sellingPrice);
-      form.set("parent", product.parent);
-      form.set("child", product.child);
-      form.set("catalog_visibility", "visible");
-      form.set("manage_stock", "true");
-      form.set("stock_quantity", "1");
-      form.set("stock_status", "instock");
-      form.set("virtual", "false");
-      form.set("owner_location", product.location);
-      form.set("owner_mobile", product.whatsapp);
-      form.set("owner_commission", "20");
-      form.set("chest_size", product.chestSize);
-      form.set("wear_count", product.wearCount);
-      form.set("availability_type", availabilityType(product.action));
-      form.set("main_image", preparedImages[0]);
-      for (const image of preparedImages.slice(1))
-        form.append("gallery_images[]", image);
+      const type = availabilityType(product.action);
+      const form = createProductFormData({
+        name: product.title.trim(),
+        description: productDescriptionHtml(product.description, type, product.sellingPrice),
+        shortDescription: product.description.trim().slice(0, 180),
+        sku: `BAP-${submissionKey}`,
+        regularPrice: product.rentalPrice || product.sellingPrice,
+        salePrice: "",
+        parent: product.parent,
+        child: product.child,
+        ownerLocation: product.location,
+        ownerMobile: product.whatsapp,
+        chestSize: product.chestSize,
+        wearCount: product.wearCount,
+        availabilityType: type,
+      }, preparedImages);
       const created = await submitVendorProduct(form);
-      setSubmittedImages(preparedImages);
+      setSubmittedImageUrls(preparedImages.map((image) => URL.createObjectURL(image)));
       setResult(created);
+      for (const image of images) if (image.url) URL.revokeObjectURL(image.url);
+      setImages(initialImages.map((image) => ({ ...image })));
       setStep(5);
       sessionStorage.removeItem("bridalArcadeWidgetDraft");
+      localStorage.removeItem("bridalArcadeWidgetDraft");
     } catch (error) {
       setErrors({
         form: getRequestErrorMessage(
@@ -326,6 +327,7 @@ export default function VendorWidget() {
       });
     } finally {
       setBusy(false);
+      submittingRef.current = false;
     }
   };
 
@@ -384,7 +386,7 @@ export default function VendorWidget() {
             <SuccessStep
               name={account.name}
               product={product}
-              images={submittedImages}
+                images={submittedImageUrls}
               result={result}
             />
               )}
@@ -726,10 +728,10 @@ function ImagesStep({ images, setImages, errors, back, submit, busy }: any) {
           <CropBox
             key={image.id}
             image={image}
-            update={(patch) =>
+            update={(patch, expectedFile) =>
               setImages((current: CropImage[]) =>
                 current.map((item) =>
-                  item.id === image.id ? { ...item, ...patch } : item,
+                  item.id === image.id && (!expectedFile || item.file === expectedFile) ? { ...item, ...patch } : item,
                 ),
               )
             }
@@ -796,8 +798,9 @@ function CropBox({
   update,
 }: {
   image: CropImage;
-  update: (patch: Partial<CropImage>) => void;
+  update: (patch: Partial<CropImage>, expectedFile?: File) => void;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const drag = useRef<{
     x: number;
     y: number;
@@ -813,17 +816,21 @@ function CropBox({
       return;
     if (image.url) URL.revokeObjectURL(image.url);
     const url = URL.createObjectURL(file);
+    update({
+      file,
+      url,
+      naturalWidth: 0,
+      naturalHeight: 0,
+      zoom: 1,
+      x: 0,
+      y: 0,
+    });
     const preview = new Image();
     preview.onload = () =>
       update({
-        file,
-        url,
         naturalWidth: preview.naturalWidth,
         naturalHeight: preview.naturalHeight,
-        zoom: 1,
-        x: 0,
-        y: 0,
-      });
+      }, file);
     preview.src = url;
   };
   return (
@@ -892,10 +899,14 @@ function CropBox({
               Max 10 MB
             </span>
             <input
+              ref={inputRef}
               className="sr-only"
               type="file"
               accept="image/jpeg,image/png,image/webp"
-              onChange={(event) => choose(event.target.files?.[0])}
+              onChange={(event) => {
+                choose(event.target.files?.[0]);
+                event.currentTarget.value = "";
+              }}
             />
           </label>
         )}
@@ -920,6 +931,7 @@ function CropBox({
             type="button"
             onClick={() => {
               if (image.url) URL.revokeObjectURL(image.url);
+              if (inputRef.current) inputRef.current.value = "";
               update({
                 file: null,
                 url: "",
@@ -943,7 +955,6 @@ function CropBox({
 
 function SuccessStep({ name, product, images, result }: any) {
   const planLimitMessage = productPlanLimitMessage(result);
-  const showUpgrade = productPlanNeedsUpgrade(result);
   return (
     <section className="mx-auto max-w-xl py-7 text-center">
       <span className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-success/10 text-success">
@@ -956,6 +967,20 @@ function SuccessStep({ name, product, images, result }: any) {
       <p className={`mx-auto mt-3 max-w-md text-sm leading-6 ${planLimitMessage ? "rounded-xl bg-amber-50 p-4 font-semibold text-amber-900" : "text-muted-foreground"}`}>
         {planLimitMessage || "Your item was submitted successfully. Our admin team will review the details and photos before accepting and publishing it."}
       </p>
+      <div className="mx-auto mt-5 max-w-md rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+        <p className="font-bold">You are currently on the Free plan.</p>
+        <p className="mt-1">
+          Your item will be visible on the Bridal Arcade website for 45 days and will then be hidden. To upgrade your plan, contact Bridal Arcade on WhatsApp.
+        </p>
+        <a
+          href="https://wa.me/94707997883?text=Hello%20Bridal%20Arcade%2C%20I%20would%20like%20to%20upgrade%20my%20plan."
+          target="_blank"
+          rel="noreferrer"
+          className="secondary-button mt-4 w-full border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+        >
+          WhatsApp Bridal Arcade · 070 799 7883
+        </a>
+      </div>
       <div className="mt-7 rounded-2xl border border-border-light bg-white p-5 text-left">
         <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
           Submission summary
@@ -966,10 +991,10 @@ function SuccessStep({ name, product, images, result }: any) {
           {product.location}
         </p>
         <div className="mt-4 grid grid-cols-3 gap-3">
-          {images.map((file: File, index: number) => (
+          {images.map((url: string) => (
             <img
-              key={index}
-              src={URL.createObjectURL(file)}
+              key={url}
+              src={url}
               alt="Submitted item"
                   className="aspect-[3/4] rounded-xl object-cover"
             />
@@ -979,7 +1004,6 @@ function SuccessStep({ name, product, images, result }: any) {
       <a href="https://portal.bridalarcade.lk/" target="_top" className="primary-button mt-7 w-full">
         Go to Bridal Arcade portal <ArrowRight size={17} />
       </a>
-      {showUpgrade && <a href="/bride/plans" target="_top" className="secondary-button mt-3 w-full">View pricing plans</a>}
     </section>
   );
 }
@@ -1112,28 +1136,13 @@ function Buttons({
     </div>
   );
 }
-function escapeHtml(value: string) {
-  return value.replace(
-    /[&<>"']/g,
-    (character) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;",
-      })[character] || character,
-  );
-}
-
-
 function availabilityType(action: Action): "rent" | "sale" | "both" {
   if (action === "Rent Only") return "rent";
   if (action === "Sell Only") return "sale";
   return "both";
 }
 
-async function createCroppedFile(image: CropImage): Promise<File> {
+async function createCroppedFile(image: CropImage, submissionKey: string): Promise<File> {
   if (!image.file || !image.naturalWidth || !image.naturalHeight)
     throw new Error("Missing image");
   const width = 600,
@@ -1172,7 +1181,11 @@ async function createCroppedFile(image: CropImage): Promise<File> {
   );
   return new File(
     [blob],
-    `${image.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.jpg`,
-    { type: "image/jpeg" },
+    `${submissionKey.toLowerCase()}-${image.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.jpg`,
+    { type: "image/jpeg", lastModified: image.file.lastModified },
   );
+}
+
+function createSubmissionKey() {
+  return `${Date.now().toString(36)}-${crypto.randomUUID().slice(0, 8)}`.toUpperCase();
 }
