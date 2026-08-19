@@ -76,3 +76,22 @@
 }
 
 .animate-fade-up { animation: fade-up .45s ease-out both; }
+
+/* iOS Safari zooms focused form controls whose text is smaller than 16px. */
+.vendor-widget .field-input,
+.vendor-widget textarea {
+  font-size: 16px;
+}
+
+.list-outfit-page {
+  scroll-behavior: smooth;
+}
+
+.testimonial-track {
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.testimonial-track::-webkit-scrollbar {
+  display: none;
+}
