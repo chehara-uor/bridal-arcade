@@ -22,6 +22,7 @@ import AdminUsers from "./pages/AdminUsers";
 import AdminUserDetail from "./pages/AdminUserDetail";
 import ResetPassword from "./pages/ResetPassword";
 import PricingPlans from "./pages/PricingPlans";
+import ListYourOutfit from "./pages/ListYourOutfit";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,7 @@ const App = () => (
           <Route path="/orders" element={<Navigate to="/bride/dashboard" replace />} />
           <Route path="/my-account" element={<Navigate to="/bride/my-account" replace />} />
           <Route path="/arcade-widget" element={<VendorWidget />} />
+          <Route path="/list-your-outfit/" element={<ListYourOutfit />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

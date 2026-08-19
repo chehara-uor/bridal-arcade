@@ -148,7 +148,7 @@ const initialImages: CropImage[] = [
   y: 0,
 }));
 
-export default function VendorWidget() {
+export default function VendorWidget({ embedded = false }: { embedded?: boolean }) {
   const [step, setStep] = useState<Step>(1);
   const [account, setAccount] = useState(initialAccount);
   const [product, setProduct] = useState(initialProduct);
@@ -331,12 +331,14 @@ export default function VendorWidget() {
     }
   };
 
+  const Root = embedded ? "div" : "main";
+
   return (
-    <main className="relative flex min-h-[900px] justify-center bg-[#efeae4]">
-      <div className="flex h-[900px] w-full max-w-[690px] flex-col overflow-hidden bg-[#fbf9f6] shadow-[0_20px_70px_rgba(50,26,39,.12)] sm:border-x sm:border-white">
+    <Root className={`vendor-widget relative flex justify-center bg-[#efeae4] ${embedded ? "" : "min-h-[900px]"}`}>
+      <div className={`flex w-full max-w-[690px] flex-col bg-[#fbf9f6] sm:border-x sm:border-white ${embedded ? "" : "h-[900px] overflow-hidden shadow-[0_20px_70px_rgba(50,26,39,.12)]"}`}>
         <WidgetHeader step={step} />
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          <div className="flex min-h-full w-full items-center px-5 py-6 sm:px-8 sm:py-8">
+        <div className={embedded ? "flex-1" : "min-h-0 flex-1 overflow-y-auto overscroll-contain"}>
+          <div className={`flex w-full px-5 py-6 sm:px-8 sm:py-8 ${embedded ? "" : "min-h-full items-center"}`}>
             <div key={step} className="w-full animate-fade-up">
               {step === 1 && (
             <AccountStep
@@ -395,7 +397,7 @@ export default function VendorWidget() {
         </div>
       </div>
       {busy && step === 4 && <SubmissionOverlay />}
-    </main>
+    </Root>
   );
 }
 
@@ -771,20 +773,20 @@ function PhotoGuide() {
     },
   ];
   return (
-    <div className="mt-6 grid gap-3 sm:grid-cols-3">
+    <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
       {cards.map((card) => (
         <div
           key={card.title}
-          className={`relative overflow-hidden rounded-2xl border p-4 ${card.ok ? "border-success/25 bg-success/5" : "border-destructive/20 bg-destructive/5"}`}
+          className={`relative min-w-0 overflow-hidden rounded-xl border p-2 sm:rounded-2xl sm:p-4 ${card.ok ? "border-success/25 bg-success/5" : "border-destructive/20 bg-destructive/5"}`}
         >
-          <img src={card.image} alt={card.title} className="aspect-[3/4] w-full rounded-xl object-cover" />
+          <img src={card.image} alt={card.title} className="aspect-[3/4] w-full rounded-lg object-cover sm:rounded-xl" />
           <span
-            className={`absolute right-6 top-6 grid h-7 w-7 place-items-center rounded-full text-white ${card.ok ? "bg-success" : "bg-destructive"}`}
+            className={`absolute right-3 top-3 grid h-6 w-6 place-items-center rounded-full text-white sm:right-6 sm:top-6 sm:h-7 sm:w-7 ${card.ok ? "bg-success" : "bg-destructive"}`}
           >
-            {card.ok ? <Check size={16} /> : <X size={16} />}
+            {card.ok ? <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
           </span>
-          <p className="mt-3 text-sm font-bold">{card.title}</p>
-          <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+          <p className="mt-2 text-[10px] font-bold leading-[13px] sm:mt-3 sm:text-sm sm:leading-5">{card.title}</p>
+          <p className="mt-1 text-[9px] leading-[12px] text-muted-foreground sm:text-[11px] sm:leading-4">
             {card.text}
           </p>
         </div>
@@ -978,7 +980,7 @@ function SuccessStep({ name, product, images, result }: any) {
           rel="noreferrer"
           className="secondary-button mt-4 w-full border-emerald-600 text-emerald-700 hover:bg-emerald-50"
         >
-          WhatsApp Bridal Arcade · 070 799 7883
+          WhatsApp · 070 799 7883
         </a>
       </div>
       <div className="mt-7 rounded-2xl border border-border-light bg-white p-5 text-left">
