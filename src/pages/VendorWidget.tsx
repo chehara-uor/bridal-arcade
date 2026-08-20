@@ -337,7 +337,7 @@ export default function VendorWidget({ embedded = false }: { embedded?: boolean 
     <Root className={`vendor-widget relative flex justify-center bg-[#efeae4] ${embedded ? "" : "min-h-[900px]"}`}>
       <div className={`flex w-full max-w-[690px] flex-col bg-[#fbf9f6] sm:border-x sm:border-white ${embedded ? "" : "h-[900px] overflow-hidden shadow-[0_20px_70px_rgba(50,26,39,.12)]"}`}>
         <WidgetHeader step={step} />
-        <div className={embedded ? "flex-1" : "min-h-0 flex-1 overflow-y-auto overscroll-contain"}>
+        <div className={embedded ? "flex-1" : "min-h-0 flex-1 overflow-y-auto"}>
           <div className={`flex w-full px-5 py-6 sm:px-8 sm:py-8 ${embedded ? "" : "min-h-full items-center"}`}>
             <div key={step} className="w-full animate-fade-up">
               {step === 1 && (
@@ -840,7 +840,7 @@ function CropBox({
       <p className="mb-2 text-center text-xs font-bold">{image.label}</p>
       <div
         onPointerDown={(event) => {
-          if (!image.url) return;
+          if (!image.url || event.pointerType === "touch") return;
           event.currentTarget.setPointerCapture(event.pointerId);
           drag.current = {
             x: event.clientX,
@@ -874,7 +874,10 @@ function CropBox({
         onPointerUp={() => {
           drag.current = null;
         }}
-        className={`relative aspect-[3/4] touch-none overflow-hidden rounded-xl border-2 ${image.url ? "cursor-grab border-primary/30 bg-[#eee9e3]" : "border-dashed border-primary/25 bg-muted/40"}`}
+        onPointerCancel={() => {
+          drag.current = null;
+        }}
+        className={`relative aspect-[3/4] overflow-hidden rounded-xl border-2 ${image.url ? "cursor-grab border-primary/30 bg-[#eee9e3]" : "border-dashed border-primary/25 bg-muted/40"}`}
       >
         {image.url ? (
           <>
