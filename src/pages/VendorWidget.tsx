@@ -160,7 +160,23 @@ export default function VendorWidget({ embedded = false }: { embedded?: boolean 
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<VendorProductResult | null>(null);
   const submittingRef = useRef(false);
+  const stepTopRef = useRef<HTMLDivElement | null>(null);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
   const children = childCategoriesFor(Number(product.parent));
+
+  const scrollToStepTop = () => {
+    requestAnimationFrame(() => {
+      scrollerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+      if (embedded) {
+        stepTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  };
+
+  const goToStep = (nextStep: Step) => {
+    setStep(nextStep);
+    scrollToStepTop();
+  };
 
   useEffect(
     () => () => submittedImageUrls.forEach((url) => URL.revokeObjectURL(url)),
@@ -213,7 +229,7 @@ export default function VendorWidget({ embedded = false }: { embedded?: boolean 
       if (!challenge) throw new Error("Missing OTP challenge");
       setOtpChallenge(challenge);
       setOtp("");
-      setStep(2);
+      goToStep(2);
     } catch {
       setErrors({
         form: "We couldn't send the verification code. Please try again.",
@@ -238,7 +254,7 @@ export default function VendorWidget({ embedded = false }: { embedded?: boolean 
         challenge: otpChallenge,
       });
       storeUser(user, "individual");
-      setStep(3);
+      goToStep(3);
     } catch (error) {
       setErrors({
         form: getRequestErrorMessage(
@@ -277,7 +293,7 @@ export default function VendorWidget({ embedded = false }: { embedded?: boolean 
     )
       next.sellingPrice = "Enter the selling price.";
     setErrors(next);
-    if (!Object.keys(next).length) setStep(4);
+    if (!Object.keys(next).length) goToStep(4);
   };
 
   const submit = async () => {
@@ -315,7 +331,7 @@ export default function VendorWidget({ embedded = false }: { embedded?: boolean 
       setResult(created);
       for (const image of images) if (image.url) URL.revokeObjectURL(image.url);
       setImages(initialImages.map((image) => ({ ...image })));
-      setStep(5);
+      goToStep(5);
       sessionStorage.removeItem("bridalArcadeWidgetDraft");
       localStorage.removeItem("bridalArcadeWidgetDraft");
     } catch (error) {
@@ -335,9 +351,13 @@ export default function VendorWidget({ embedded = false }: { embedded?: boolean 
 
   return (
     <Root className={`vendor-widget relative flex justify-center bg-[#efeae4] ${embedded ? "" : "min-h-[900px]"}`}>
+      <div ref={stepTopRef} aria-hidden="true" className="absolute top-0" />
       <div className={`flex w-full max-w-[690px] flex-col bg-[#fbf9f6] sm:border-x sm:border-white ${embedded ? "" : "h-[900px] overflow-hidden shadow-[0_20px_70px_rgba(50,26,39,.12)]"}`}>
         <WidgetHeader step={step} />
-        <div className={embedded ? "flex-1" : "min-h-0 flex-1 overflow-y-auto"}>
+        <div
+          ref={scrollerRef}
+          className={embedded ? "flex-1" : "min-h-0 flex-1 overflow-y-auto"}
+        >
           <div className={`flex w-full px-5 py-6 sm:px-8 sm:py-8 ${embedded ? "" : "min-h-full items-center"}`}>
             <div key={step} className="w-full animate-fade-up">
               {step === 1 && (
@@ -358,7 +378,7 @@ export default function VendorWidget({ embedded = false }: { embedded?: boolean 
                 setErrors({});
               }}
               errors={errors}
-              back={() => setStep(1)}
+              back={() => goToStep(1)}
               next={confirmOtp}
               resend={startVerification}
               busy={busy}
@@ -370,7 +390,7 @@ export default function VendorWidget({ embedded = false }: { embedded?: boolean 
               errors={errors}
               update={updateProduct}
               children={children}
-              back={() => setStep(2)}
+              back={() => goToStep(2)}
               next={validateProduct}
             />
               )}
@@ -379,7 +399,7 @@ export default function VendorWidget({ embedded = false }: { embedded?: boolean 
               images={images}
               setImages={setImages}
               errors={errors}
-              back={() => setStep(3)}
+              back={() => goToStep(3)}
               submit={submit}
               busy={busy}
             />
